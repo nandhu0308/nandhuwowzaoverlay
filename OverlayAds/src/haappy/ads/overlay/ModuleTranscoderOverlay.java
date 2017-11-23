@@ -240,10 +240,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		String firstPosition = "CENTER_CENTER";
 		String secondPosition = "RIGHT_TOP";
 		// String thirdPosition = "LEFT_BOTTOM";
-		 int calculatedWidth,calculatedHeight; 
-		
-		
-		
+		int calculatedWidth, calculatedHeight;
+
 		public TranscoderVideoDecoderNotifyExample(int srcWidth, int srcHeight) {
 			this.srcWidth = srcWidth;
 			this.srcHeight = srcHeight;
@@ -397,7 +395,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			WebResource webResource;
 			try {
 				client = Client.create();
-//				String url = "http://localhost:8080/LLCWeb/engage/ads/get/logo/event/" + eventList.get(0).getId();
+				// String url = "http://localhost:8080/LLCWeb/engage/ads/get/logo/event/" +
+				// eventList.get(0).getId();
 				String url = ApiManager.getInstance().getEventAdsApi(eventList.get(0).getId());
 				webResource = client.resource(url);
 				ClientResponse response = webResource.accept(MediaType.APPLICATION_JSON)
@@ -412,8 +411,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					}.getRawType();
 
 					AdsModel[] ads = gson.fromJson(responseStr, type);
-					getLogger().info("received ads - "+ ads[0].getAdPlacement());
-					setupadsImages(ads[0].getLogoFtpPath(),ads[0].getAdPlacement());
+					getLogger().info("received ads - " + ads[0].getAdPlacement());
+					setupadsImages(ads[0].getLogoFtpPath(), ads[0].getAdPlacement());
 				}
 			} catch (Exception e) {
 				getLogger().info("api error " + e.getMessage());
@@ -425,8 +424,10 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			calculatedWidth = Math.round(getOverlayPositionX(srcWidth, placement));
 			calculatedHeight = Math.round(getOverlayPositionY(srcHeight, placement));
 			getLogger().info("placement-" + placement);
-//			wowzaImage = new OverlayImage(imagePath, 100);
-			wowzaImage = new OverlayImage(basePath+secondGraphName, 100);
+			// TODO: FOR PROD
+			wowzaImage = new OverlayImage(imagePath, 100);
+			// FOR LOCAL
+			// wowzaImage = new OverlayImage(basePath+secondGraphName, 100);
 			if (calculatedWidth == 0)
 				calculatedWidth = wowzaImage.GetWidth(1.0);
 			else if (calculatedWidth != srcWidth) {
