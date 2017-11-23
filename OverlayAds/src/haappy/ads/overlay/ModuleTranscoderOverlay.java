@@ -170,12 +170,9 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				getLogger().info("Creating new Overlay:" + "width-" + w + ", height-" + h);
 				transcoder = new TranscoderVideoDecoderNotifyExample(w, h);
 				transcoderVideoSession.addFrameListener(transcoder);
-				// transcoderVideoSession.removeFrameListener(transcoder);
 
 				// apply an overlay to all outputs
 				for (TranscoderStreamDestination destination : alltrans) {
-					// TranscoderSessionVideoEncode sessionVideoEncode =
-					// transcoderVideoSession.getEncode(destination.getName());
 					TranscoderStreamDestinationVideo videoDestination = destination.getVideo();
 					System.out.println("sessionVideoEncode:" + sessionVideoEncode);
 					System.out.println("videoDestination:" + videoDestination);
@@ -431,9 +428,9 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			calculatedHeight = Math.round(getOverlayPositionY(srcHeight, placement));
 			getLogger().info("placement-" + placement);
 			// TODO: FOR PROD
-			wowzaImage = new OverlayImage(imagePath, 100);
+//			wowzaImage = new OverlayImage(imagePath, 100);
 			// FOR LOCAL
-			// wowzaImage = new OverlayImage(basePath+secondGraphName, 100);
+			 wowzaImage = new OverlayImage(basePath+secondGraphName, 100);
 			if (calculatedWidth == 0)
 				calculatedWidth = wowzaImage.GetWidth(1.0);
 			else if (calculatedWidth != srcWidth) {
