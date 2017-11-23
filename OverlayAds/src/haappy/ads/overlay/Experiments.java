@@ -556,6 +556,24 @@ public class Experiments extends ModuleBase {
 			// Pinch back video
 			videoBottomPadding.addAnimationStep(0, overlayScreenHeight, 50);
 			videoBottomPadding.addAnimationStep(200);
+
+*************************************************************************************************************
+*tmider task for ads just for testing
+*	private void startAdsTimer(List<AdsModel> ads){
+			Timer timer = new Timer();
+			timer.schedule(new TimerTask() {
+				int adsCounter = 0;
+
+				@Override
+				public void run() {
+					setupadsImages(ads.get(adsCounter).getLogoFtpPath(), ads.get(adsCounter).getAdPlacement());
+					if (adsCounter < ads.size())
+						adsCounter++;
+					else
+						adsCounter = 0;
+				}
+			}, 0, 30000);
+		}
 			*
 			*
 			*/
