@@ -58,7 +58,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	String secondGraphName = "wowzalogo.png";
 	LiveStreamTranscoder liveStreamTranscoder;
 	TranscoderVideoDecoderNotifyExample transcoderVideo;
-	private List<EventModel> eventList = new ArrayList<>();
+	
 	private int eventPosition = 0;
 
 	private String headerStr = "NDA5MC57InJvbGUiOiJjdXN0b21lciIsInZhbHVlIjoiOWE3OWVmNTM3YmFmYWYwMDRhZDAxNjc3Y2RiM2U4NGFiNTUyNGIzNThiZGQ5Nzk2MTE3ZGVhZmE0MTMxMzBhNiIsImtleSI6MTAwMTE3fQ==";
@@ -367,9 +367,13 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					Type type = new TypeToken<EventModel[]>() {
 					}.getRawType();
 					EventModel[] eventsArray = gson.fromJson(responseStr, type);
+					List<EventModel> eventList = new ArrayList<>();
 					eventList.addAll(Arrays.asList(eventsArray));
 					if (!eventList.isEmpty()) {
-						startEventTimer();
+						for (EventModel eventItem : eventList) {
+							startEventTimer(eventItem);
+						}
+
 					}
 				}
 			} catch (Exception e) {
@@ -378,26 +382,26 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 		}
 
-		private void startEventTimer() {
+		private void startEventTimer(EventModel eventModel) {
 			Timer timer = new Timer();
 			timer.schedule(new TimerTask() {
 
 				@Override
 				public void run() {
-					getEventsAds();
+					getEventsAds(eventModel);
 				}
-			}, 0, TimeUnit.MINUTES.toMillis(eventList.get(0).getAdWindowTime()));
+			}, 0, TimeUnit.MINUTES.toMillis(eventModel.getAdWindowTime()));
 
 		}
 
-		protected void getEventsAds() {
+		protected void getEventsAds(EventModel eventModel) {
 			Client client;
 			WebResource webResource;
 			try {
 				client = Client.create();
 				// String url = "http://localhost:8080/LLCWeb/engage/ads/get/logo/event/" +
 				// eventList.get(0).getId();
-				String url = ApiManager.getInstance().getEventAdsApi(eventList.get(0).getId());
+				String url = ApiManager.getInstance().getEventAdsApi(eventModel.getId());
 				webResource = client.resource(url);
 				ClientResponse response = webResource.accept(MediaType.APPLICATION_JSON)
 						.type(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, headerStr)
@@ -411,8 +415,13 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					}.getRawType();
 
 					AdsModel[] ads = gson.fromJson(responseStr, type);
-					getLogger().info("received ads - " + ads[0].getAdPlacement());
-					setupadsImages(ads[0].getLogoFtpPath(), ads[0].getAdPlacement());
+					if (ads != null) {
+						for (AdsModel adModel : ads) {
+							getLogger().info("received ads - " + adModel.getAdPlacement());
+							setupadsImages(adModel.getLogoFtpPath(), adModel.getAdPlacement());
+						}
+					}
+
 				}
 			} catch (Exception e) {
 				getLogger().info("api error " + e.getMessage());
