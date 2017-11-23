@@ -237,9 +237,6 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		int overlayScreenHeight;
 		int overlayWidth;
 		private String overlayText = "Haappy app overlay example transcoder with bottom text";
-		String firstPosition = "CENTER_CENTER";
-		String secondPosition = "RIGHT_TOP";
-		// String thirdPosition = "LEFT_BOTTOM";
 		int calculatedWidth, calculatedHeight;
 
 		public TranscoderVideoDecoderNotifyExample(int srcWidth, int srcHeight) {
