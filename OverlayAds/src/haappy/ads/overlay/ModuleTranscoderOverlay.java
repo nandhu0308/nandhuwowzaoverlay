@@ -225,7 +225,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 	class TranscoderVideoDecoderNotifyExample extends TranscoderVideoDecoderNotifyBase {
 		private volatile OverlayImage mainImage = null;
-		private volatile OverlayImage wowzaImage = null;
+
 		private OverlayImage wowzaText = null;
 		private OverlayImage wowzaTextShadow = null;
 		List<EncoderInfo> encoderInfoList = new ArrayList<EncoderInfo>();
@@ -436,6 +436,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		}
 
 		private void scheduleAds(AdsModel adModel) {
+			getLogger().info("Scheduling for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 			TimeZone indianTimeZone = TimeZone.getTimeZone("Asia/Kolkata");
 			if (indianTimeZone == null)
 				indianTimeZone = TimeZone.getTimeZone("Asia/Calcutta");
@@ -452,18 +453,22 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 					@Override
 					public void run() {
-						setupadsImages(adModel.getLogoFtpPath(), adModel.getAdPlacement());
+						setupadsImages(adModel);
 					}
 				}, difference);
 			}
 		}
 
-		private void setupadsImages(String imagePath, String placement) {
+		private void setupadsImages(AdsModel adModel) {
+			String imagePath = adModel.getLogoFtpPath();
+			String placement = adModel.getAdPlacement();
+			getLogger().info("Executing for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 			calculatedWidth = Math.round(getOverlayPositionX(srcWidth, placement));
 			calculatedHeight = Math.round(getOverlayPositionY(srcHeight, placement));
 			getLogger().info("placement-" + placement);
 			// TODO: FOR PROD
-			wowzaImage = new OverlayImage(imagePath, 100);
+			OverlayImage wowzaImage = new OverlayImage(imagePath, 100);
+			getLogger().info("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 			// FOR LOCAL
 			// wowzaImage = new OverlayImage(basePath+secondGraphName, 100);
 			if (calculatedWidth == 0)
@@ -475,13 +480,15 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				calculatedHeight += wowzaImage.GetHeight(0.5);
 			}
 			// create a transparent container for the bottom third of the screen.
-			mainImage = new OverlayImage(0, srcHeight - calculatedHeight, srcWidth, wowzaImage.GetHeight(1.0), 100);
+			OverlayImage mainImage = new OverlayImage(0, srcHeight - calculatedHeight, srcWidth,
+					wowzaImage.GetHeight(1.0), 100);
 			// Create the Wowza logo image
 			getLogger().info("screen width=" + srcWidth + " calculatedWidth = " + calculatedWidth);
 			// secondImage = new OverlayImage(basePath+graphicName,100);
 			// getLogger().info("Image path "+basePath+graphicName);
 			overlayScreenHeight = 0;
 			mainImage.addOverlayImage(wowzaImage, srcWidth - calculatedWidth, 0);
+			this.mainImage = mainImage;
 			imageTime = true;
 		}
 
