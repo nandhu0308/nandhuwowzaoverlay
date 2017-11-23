@@ -60,7 +60,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	TranscoderVideoDecoderNotifyExample transcoderVideo;
 	private List<EventModel> eventList = new ArrayList<>();
 	private int eventPosition = 0;
-	
+
 	private String headerStr = "NDA5MC57InJvbGUiOiJjdXN0b21lciIsInZhbHVlIjoiOWE3OWVmNTM3YmFmYWYwMDRhZDAxNjc3Y2RiM2U4NGFiNTUyNGIzNThiZGQ5Nzk2MTE3ZGVhZmE0MTMxMzBhNiIsImtleSI6MTAwMTE3fQ==";
 	int overlayIndex = 1;
 	private IApplicationInstance appInstance = null;
@@ -232,7 +232,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		private String leftIamgeName = "haappy_lBand_vertical.png";
 		// private String bottomImageName = "haappyapp-lband.png";
 		private String fullOverlayImage = "full_mage.png";
-		int srcWidth,srcHeight;
+		int srcWidth, srcHeight;
 		int childPosition;
 		int overlayScreenHeight;
 		int overlayWidth;
@@ -240,71 +240,73 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		String firstPosition = "CENTER_CENTER";
 		String secondPosition = "RIGHT_TOP";
 		// String thirdPosition = "LEFT_BOTTOM";
-		 int calculatedWidth,calculatedHeight;
-		
-		
-		
+		int calculatedWidth, calculatedHeight;
+
 		public TranscoderVideoDecoderNotifyExample(int srcWidth, int srcHeight) {
 			this.srcWidth = srcWidth;
 			this.srcHeight = srcHeight;
 			getAppId();
-//			wowzaImage = new OverlayImage(basePath + graphicName, 100);
-//			 if (calculatedWidth == 0)
-//			 calculatedWidth = wowzaImage.GetWidth(1.0);
-//			 else if (calculatedWidth != srcWidth) {
-//			 calculatedWidth += wowzaImage.GetWidth(0.5);
-//			 }
-//			 if (calculatedHeight != srcHeight && calculatedHeight != 0) {
-//			 calculatedHeight += wowzaImage.GetHeight(0.5);
-//			 }
+			// wowzaImage = new OverlayImage(basePath + graphicName, 100);
+			// if (calculatedWidth == 0)
+			// calculatedWidth = wowzaImage.GetWidth(1.0);
+			// else if (calculatedWidth != srcWidth) {
+			// calculatedWidth += wowzaImage.GetWidth(0.5);
+			// }
+			// if (calculatedHeight != srcHeight && calculatedHeight != 0) {
+			// calculatedHeight += wowzaImage.GetHeight(0.5);
+			// }
 
 			// Create the Wowza logo image
 			getLogger().info("screen width=" + srcWidth + " height = " + srcHeight);
-//			secondImage = new OverlayImage(basePath + secondGraphName, 100);
-//			holderImage = new OverlayImage(basePath + bottomImageName, 100);
-//
-//			// mainImage.addOverlayImage(secondImage,0,0);
-//
-//			// Add Text with a drop shadow
-//			wowzaText = new OverlayImage(overlayText, 12, "SansSerif", Font.BOLD, Color.white, srcWidth, 15, 100);
-//			wowzaTextShadow = new OverlayImage(overlayText, 12, "SansSerif", Font.BOLD, Color.darkGray, srcWidth, 15,
-//					100);
-//			// create a transparent container for the bottom third of the
-//			// screen.
-//			overlayScreenHeight = holderImage.GetHeight(1.0) + wowzaText.GetHeight(1.0);
-//			mainImage = new OverlayImage(0, srcHeight - overlayScreenHeight, srcWidth, overlayScreenHeight, 100);
-//			mainImage.addOverlayImage(holderImage, srcWidth - holderImage.GetWidth(1.0), 0);
-//			mainImage.addOverlayImage(wowzaText, wowzaImage.GetxPos(1.0) + 12,
-//					overlayScreenHeight - wowzaText.GetHeight(1.0));
-//			wowzaText.addOverlayImage(wowzaTextShadow, 1, 1);
-//
-//			// do nothing for a bit
-//			mainImage.addFadingStep(50);
-//			wowzaImage.addImageStep(50);
-//			secondImage.addImageStep(50);
-//			holderImage.addImageStep(50);
-//			wowzaText.addImageStep(50);
-//			// Fade the logo and text
-//			// mainImage.addFadingStep(0,100,100);
-//
-//			// hold everything for a bit
-//			mainImage.addFadingStep(50);
-//			wowzaImage.addImageStep(50);
-//			secondImage.addImageStep(50);
-//			holderImage.addImageStep(50);
-//			wowzaText.addImageStep(50);
-//
-//			// Fade out
-//			// mainImage.addFadingStep(100,0,50);
-//			// wowzaImage.addImageStep(50);
-//			// secondImage.addImageStep(50);
-//			// wowzaImage.addFadingStep(50);
-//			// holderImage.addFadingStep(50);
-//			// secondImage.addFadingStep(50);
-//
-//			// Pinch back video
-//			videoBottomPadding.addAnimationStep(0, overlayScreenHeight, 50);
-//			videoBottomPadding.addAnimationStep(200);
+			// secondImage = new OverlayImage(basePath + secondGraphName, 100);
+			// holderImage = new OverlayImage(basePath + bottomImageName, 100);
+			//
+			// // mainImage.addOverlayImage(secondImage,0,0);
+			//
+			// // Add Text with a drop shadow
+			// wowzaText = new OverlayImage(overlayText, 12, "SansSerif", Font.BOLD,
+			// Color.white, srcWidth, 15, 100);
+			// wowzaTextShadow = new OverlayImage(overlayText, 12, "SansSerif", Font.BOLD,
+			// Color.darkGray, srcWidth, 15,
+			// 100);
+			// // create a transparent container for the bottom third of the
+			// // screen.
+			// overlayScreenHeight = holderImage.GetHeight(1.0) + wowzaText.GetHeight(1.0);
+			// mainImage = new OverlayImage(0, srcHeight - overlayScreenHeight, srcWidth,
+			// overlayScreenHeight, 100);
+			// mainImage.addOverlayImage(holderImage, srcWidth - holderImage.GetWidth(1.0),
+			// 0);
+			// mainImage.addOverlayImage(wowzaText, wowzaImage.GetxPos(1.0) + 12,
+			// overlayScreenHeight - wowzaText.GetHeight(1.0));
+			// wowzaText.addOverlayImage(wowzaTextShadow, 1, 1);
+			//
+			// // do nothing for a bit
+			// mainImage.addFadingStep(50);
+			// wowzaImage.addImageStep(50);
+			// secondImage.addImageStep(50);
+			// holderImage.addImageStep(50);
+			// wowzaText.addImageStep(50);
+			// // Fade the logo and text
+			// // mainImage.addFadingStep(0,100,100);
+			//
+			// // hold everything for a bit
+			// mainImage.addFadingStep(50);
+			// wowzaImage.addImageStep(50);
+			// secondImage.addImageStep(50);
+			// holderImage.addImageStep(50);
+			// wowzaText.addImageStep(50);
+			//
+			// // Fade out
+			// // mainImage.addFadingStep(100,0,50);
+			// // wowzaImage.addImageStep(50);
+			// // secondImage.addImageStep(50);
+			// // wowzaImage.addFadingStep(50);
+			// // holderImage.addFadingStep(50);
+			// // secondImage.addFadingStep(50);
+			//
+			// // Pinch back video
+			// videoBottomPadding.addAnimationStep(0, overlayScreenHeight, 50);
+			// videoBottomPadding.addAnimationStep(200);
 			// unpinch the video
 			// videoBottomPadding.addAnimationStep(130, 0, 50);
 			// mainImage.addFadingStep(150);
@@ -315,20 +317,20 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			// holderImage = wowzaImage;
 			// startImageTimer();
 		}
-		
-		private void getAppId(){
+
+		private void getAppId() {
 			Client client;
 			WebResource webResource;
 			try {
 				client = Client.create();
-				webResource = client.resource("http://localhost:8080/LLCWeb/engage/broadcast/application/channel");
+				webResource = client.resource(ApiManager.getInstance().getChannelIdApi());
 				JSONObject requestJson = new JSONObject();
 				requestJson.put("applicationName", appInstance.getApplication().getName());
 				getLogger().info("Get api Response");
 				String payload = requestJson.toString();
 				ClientResponse response = webResource.accept(MediaType.APPLICATION_JSON)
 						.type(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, headerStr)
-						.post(ClientResponse.class,payload);
+						.post(ClientResponse.class, payload);
 				int responseStatus = response.getStatus();
 				String responseStr = response.getEntity(String.class);
 				if (responseStatus != ClientResponse.Status.OK.getStatusCode()) {
@@ -336,7 +338,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				} else {
 					JSONObject responseObject = new JSONObject(responseStr);
 					String id = responseObject.getString("channelId");
-					getLogger().info("app id response "+id);
+					getLogger().info("app id response " + id);
 					getScheduledAds(id);
 				}
 			} catch (Exception e) {
@@ -349,7 +351,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			WebResource webResource;
 			try {
 				client = Client.create();
-				String url = "http://localhost:8080/LLCWeb/engage/ads/get/event/channel/"+id;
+				// String url = "http://localhost:8080/LLCWeb/engage/ads/get/event/channel/"+id;
+				String url = ApiManager.getInstance().getChannelEventApi(id);
 				webResource = client.resource(url);
 
 				ClientResponse response = webResource.accept(MediaType.APPLICATION_JSON)
@@ -365,7 +368,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					}.getRawType();
 					EventModel[] eventsArray = gson.fromJson(responseStr, type);
 					eventList.addAll(Arrays.asList(eventsArray));
-					if(!eventList.isEmpty()){
+					if (!eventList.isEmpty()) {
 						startEventTimer();
 					}
 				}
@@ -383,18 +386,18 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				public void run() {
 					getEventsAds();
 				}
-			}, 0,TimeUnit.MINUTES.toMillis(eventList.get(0).getAdWindowTime()));
+			}, 0, TimeUnit.MINUTES.toMillis(eventList.get(0).getAdWindowTime()));
 
 		}
-
 
 		protected void getEventsAds() {
 			Client client;
 			WebResource webResource;
 			try {
 				client = Client.create();
-				String url = "http://localhost:8080/LLCWeb/engage/ads/get/logo/event/"+eventList.get(0).getId();
-				webResource = client.resource(url);			
+//				String url = "http://localhost:8080/LLCWeb/engage/ads/get/logo/event/" + eventList.get(0).getId();
+				String url = ApiManager.getInstance().getEventAdsApi(eventList.get(0).getId());
+				webResource = client.resource(url);
 				ClientResponse response = webResource.accept(MediaType.APPLICATION_JSON)
 						.type(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, headerStr)
 						.get(ClientResponse.class);
@@ -405,22 +408,21 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					Gson gson = new Gson();
 					Type type = new TypeToken<AdsModel>() {
 					}.getRawType();
-					
+
 					AdsModel ads = gson.fromJson(responseStr, type);
-					getLogger().info("received ads - "+ ads.getAdPlacement());
-					setupadsImages(ads.getLogoFtpPath(),ads.getAdPlacement());
+					getLogger().info("received ads - " + ads.getAdPlacement());
+					setupadsImages(ads.getLogoFtpPath(), ads.getAdPlacement());
 				}
-			} 
-			catch (Exception e) {
+			} catch (Exception e) {
 				getLogger().info("api error " + e.getMessage());
 			}
-			
+
 		}
-		
-		private void setupadsImages(String imagePath, String placement){
-			calculatedWidth = Math.round(getOverlayPositionX(srcWidth,placement));
-			calculatedHeight = Math.round(getOverlayPositionY(srcHeight,placement));
-			getLogger().info("placement-"+placement);
+
+		private void setupadsImages(String imagePath, String placement) {
+			calculatedWidth = Math.round(getOverlayPositionX(srcWidth, placement));
+			calculatedHeight = Math.round(getOverlayPositionY(srcHeight, placement));
+			getLogger().info("placement-" + placement);
 			wowzaImage = new OverlayImage(imagePath, 100);
 			if (calculatedWidth == 0)
 				calculatedWidth = wowzaImage.GetWidth(1.0);
@@ -430,17 +432,16 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			if (calculatedHeight != srcHeight && calculatedHeight != 0) {
 				calculatedHeight += wowzaImage.GetHeight(0.5);
 			}
-			//create a transparent container for the bottom third of the screen.
-			mainImage = new OverlayImage(0,srcHeight-calculatedHeight,srcWidth,wowzaImage.GetHeight(1.0),100);
-			//Create the Wowza logo image
-			getLogger().info("screen width="+srcWidth+" calculatedWidth = "+calculatedWidth);
-			secondImage = new OverlayImage(basePath+graphicName,100);
-			getLogger().info("Image path "+basePath+graphicName);
+			// create a transparent container for the bottom third of the screen.
+			mainImage = new OverlayImage(0, srcHeight - calculatedHeight, srcWidth, wowzaImage.GetHeight(1.0), 100);
+			// Create the Wowza logo image
+			getLogger().info("screen width=" + srcWidth + " calculatedWidth = " + calculatedWidth);
+			// secondImage = new OverlayImage(basePath+graphicName,100);
+			// getLogger().info("Image path "+basePath+graphicName);
 			overlayScreenHeight = 0;
-			mainImage.addOverlayImage(wowzaImage,srcWidth-calculatedWidth,0);
+			mainImage.addOverlayImage(wowzaImage, srcWidth - calculatedWidth, 0);
 			imageTime = true;
 		}
-		
 
 		public void addEncoder(String name, TranscoderSessionVideoEncode sessionVideoEncode,
 				TranscoderStreamDestinationVideo destinationVideo) {
@@ -456,19 +457,6 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 				if (mainImage != null) {
 
-					if (imageTime) {
-						imageTime = false;
-						mainImage.removeChild(holderImage);
-						if (childPosition == 0) {
-							holderImage = wowzaImage;
-							childPosition = 1;
-						} else {
-							holderImage = secondImage;
-							childPosition = 0;
-						}
-						mainImage.addOverlayImage(holderImage, srcWidth - calculatedWidth, 0);
-					}
-
 					// does not need to be done for a static graphic, but left
 					// here to build on (transparency/animation)
 					// videoBottomPadding.step();
@@ -476,13 +464,12 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					int sourceHeight = sessionVideo.getDecoderHeight();
 					int sourceWidth = sessionVideo.getDecoderWidth();
 					// getLogger().info("Showtime = "+showTime);
-					 if(showTime)
-					 {
-					 Date dNow = new Date( );
-					 SimpleDateFormat ft = new SimpleDateFormat("hh:mm:ss");
-					// wowzaText.SetText(ft.format(dNow));
-					// wowzaTextShadow.SetText(ft.format(dNow));
-					 }
+					if (showTime) {
+						Date dNow = new Date();
+						SimpleDateFormat ft = new SimpleDateFormat("hh:mm:ss");
+						// wowzaText.SetText(ft.format(dNow));
+						// wowzaTextShadow.SetText(ft.format(dNow));
+					}
 					if (encodeSource) {
 						// put the image onto the source
 						scalingFactor = 1.0;
