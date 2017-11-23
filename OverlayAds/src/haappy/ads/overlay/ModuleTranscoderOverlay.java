@@ -4,23 +4,28 @@ import java.awt.Color;
 import java.awt.Font;
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.spi.TimeZoneNameProvider;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.http.client.HttpClient;
+import org.joda.time.DateTime;
 import org.json.JSONObject;
 
 import com.sun.jersey.api.client.Client;
@@ -58,7 +63,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	String secondGraphName = "wowzalogo.png";
 	LiveStreamTranscoder liveStreamTranscoder;
 	TranscoderVideoDecoderNotifyExample transcoderVideo;
-	
+
 	private int eventPosition = 0;
 
 	private String headerStr = "NDA5MC57InJvbGUiOiJjdXN0b21lciIsInZhbHVlIjoiOWE3OWVmNTM3YmFmYWYwMDRhZDAxNjc3Y2RiM2U4NGFiNTUyNGIzNThiZGQ5Nzk2MTE3ZGVhZmE0MTMxMzBhNiIsImtleSI6MTAwMTE3fQ==";
@@ -390,7 +395,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				public void run() {
 					getEventsAds(eventModel);
 				}
-			}, 0, TimeUnit.MINUTES.toMillis(eventModel.getAdWindowTime()));
+			}, 0, TimeUnit.MINUTES.toMillis(eventModel.getAdWindowTime()) + 1000);
 
 		}
 
@@ -418,7 +423,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					if (ads != null) {
 						for (AdsModel adModel : ads) {
 							getLogger().info("received ads - " + adModel.getAdPlacement());
-							setupadsImages(adModel.getLogoFtpPath(), adModel.getAdPlacement());
+							scheduleAds(adModel);
+							// setupadsImages(adModel.getLogoFtpPath(), adModel.getAdPlacement());
 						}
 					}
 
@@ -427,6 +433,29 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				getLogger().info("api error " + e.getMessage());
 			}
 
+		}
+
+		private void scheduleAds(AdsModel adModel) {
+			TimeZone indianTimeZone = TimeZone.getTimeZone("Asia/Kolkata");
+			if (indianTimeZone == null)
+				indianTimeZone = TimeZone.getTimeZone("Asia/Calcutta");
+			Calendar calendar = Calendar.getInstance(indianTimeZone);
+			String[] split = adModel.getTimeSlotStart().split(":");
+			Date currentTime = calendar.getTime();
+			calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(split[0].trim()));
+			calendar.set(Calendar.MINUTE, Integer.parseInt(split[1].trim()));
+			Date modifiedTime = calendar.getTime();
+			long difference = modifiedTime.getTime() - currentTime.getTime();
+			if (difference >= 0) {
+				Timer timer = new Timer();
+				timer.schedule(new TimerTask() {
+
+					@Override
+					public void run() {
+						setupadsImages(adModel.getLogoFtpPath(), adModel.getAdPlacement());
+					}
+				}, difference);
+			}
 		}
 
 		private void setupadsImages(String imagePath, String placement) {
