@@ -449,10 +449,13 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 						String[] split = eventModel.getStartTime().split(":");
 						calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(split[0].trim()));
 						calendar.set(Calendar.MINUTE, Integer.parseInt(split[1].trim()));
-						calendar.add(Calendar.HOUR, eventModel.getDuration());
+						calendar.add(Calendar.HOUR, eventModel.getDuration()); // get the end time
 						Date eventEndTime = calendar.getTime();
-						if (currentTime.getTime() < eventEndTime.getTime())
-							timerFrequencyInMinutes = eventModel.getAdWindowTime();
+						if (currentTime.getTime() < eventEndTime.getTime()) {
+							long timerFrequencyInMilli = currentTime.getTime()
+									- TimeUnit.MINUTES.toMillis(eventModel.getAdWindowTime());
+							timerFrequencyInMinutes = TimeUnit.MILLISECONDS.toMinutes(timerFrequencyInMilli);
+						}
 					}
 					getLogger().info("timer frequency: " + timerFrequencyInMinutes);
 					if (timerFrequencyInMinutes > 0) {
@@ -464,6 +467,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 							}
 						}, TimeUnit.MINUTES.toMillis(timerFrequencyInMinutes));
 
+					} else {
+						targetImageMap.clear();
 					}
 
 				}
@@ -479,13 +484,13 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			if (indianTimeZone == null)
 				indianTimeZone = TimeZone.getTimeZone("Asia/Calcutta");
 			Calendar calendar = Calendar.getInstance(indianTimeZone);
-			String[] split = adModel.getTimeSlotStart().split(":");
+			String[] split = adModel.getTimeSlotEnd().split(":");
 			Date currentTime = calendar.getTime();
 			calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(split[0].trim()));
 			calendar.set(Calendar.MINUTE, Integer.parseInt(split[1].trim()));
-			Date modifiedTime = calendar.getTime();
-			long difference = modifiedTime.getTime() - currentTime.getTime();
-			return TimeUnit.MILLISECONDS.toMinutes(difference);
+			Date endTime = calendar.getTime();
+			long difference = endTime.getTime() - currentTime.getTime();
+			return difference > 0 ? TimeUnit.MILLISECONDS.toMinutes(difference) : 0;
 
 		}
 
@@ -550,7 +555,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 							StreamOverlayImageDetail imageDetails = targetImageMap.get(key);
 							OverlayImage mainImage = imageDetails.getMainImage();
-//							getLogger().debug("overlaying for : " + key);
+							// getLogger().debug("overlaying for : " + key);
 							int destinationHeight = encoderInfo.destinationVideo.getFrameSizeHeight();
 							scalingFactor = (double) destinationHeight / (double) sourceHeight;
 							TranscoderVideoOverlayFrame overlay = new TranscoderVideoOverlayFrame(
