@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.spi.TimeZoneNameProvider;
@@ -61,9 +62,10 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 	String graphicName = "logo.png";
 	String secondGraphName = "wowzalogo.png";
+
 	LiveStreamTranscoder liveStreamTranscoder;
 	TranscoderVideoDecoderNotifyExample transcoderVideo;
-
+	ConcurrentHashMap<StreamTarget, StreamOverlayImageDetail> targetImageMap = new ConcurrentHashMap<>();
 	private int eventPosition = 0;
 
 	private String headerStr = "NDA5MC57InJvbGUiOiJjdXN0b21lciIsInZhbHVlIjoiOWE3OWVmNTM3YmFmYWYwMDRhZDAxNjc3Y2RiM2U4NGFiNTUyNGIzNThiZGQ5Nzk2MTE3ZGVhZmE0MTMxMzBhNiIsImtleSI6MTAwMTE3fQ==";
@@ -74,6 +76,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	 */
 	private String basePath = null;
 	private Object lock = new Object();
+	TranscoderCreateNotifierExample trancoderNotifier = null;
 
 	public void onAppStart(IApplicationInstance appInstance) {
 		String fullname = appInstance.getApplication().getName() + "/" + appInstance.getName();
@@ -93,7 +96,10 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		this.basePath = this.basePath.replace("\\", "/");
 		if (!this.basePath.endsWith("/"))
 			this.basePath = this.basePath + "/";
-		this.appInstance.addLiveStreamTranscoderListener(new TranscoderCreateNotifierExample());
+		if (trancoderNotifier == null) {
+			trancoderNotifier = new TranscoderCreateNotifierExample();
+			this.appInstance.addLiveStreamTranscoderListener(trancoderNotifier);
+		}
 
 	}
 
@@ -224,7 +230,6 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	}
 
 	class TranscoderVideoDecoderNotifyExample extends TranscoderVideoDecoderNotifyBase {
-		private volatile OverlayImage mainImage = null;
 
 		private OverlayImage wowzaText = null;
 		private OverlayImage wowzaTextShadow = null;
@@ -248,6 +253,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		int calculatedWidth, calculatedHeight;
 
 		public TranscoderVideoDecoderNotifyExample(int srcWidth, int srcHeight) {
+			getLogger().info("Creating TranscoderVideoDecoderNotifyExample");
 			this.srcWidth = srcWidth;
 			this.srcHeight = srcHeight;
 			getAppId();
@@ -331,7 +337,6 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				webResource = client.resource(ApiManager.getInstance().getChannelIdApi());
 				JSONObject requestJson = new JSONObject();
 				requestJson.put("applicationName", appInstance.getApplication().getName());
-				getLogger().info("Get api Response");
 				String payload = requestJson.toString();
 				ClientResponse response = webResource.accept(MediaType.APPLICATION_JSON)
 						.type(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, headerStr)
@@ -339,11 +344,11 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				int responseStatus = response.getStatus();
 				String responseStr = response.getEntity(String.class);
 				if (responseStatus != ClientResponse.Status.OK.getStatusCode()) {
-					getLogger().error("api call error " + responseStatus + "-->" + responseStr);
+					getLogger().error("Channel Id api call error " + responseStatus + "-->" + responseStr);
 				} else {
 					JSONObject responseObject = new JSONObject(responseStr);
 					String id = responseObject.getString("channelId");
-					getLogger().info("app id response " + id);
+					getLogger().info("ChannelId API response " + id);
 					getScheduledAds(id);
 				}
 			} catch (Exception e) {
@@ -366,8 +371,9 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				int responseStatus = response.getStatus();
 				String responseStr = response.getEntity(String.class);
 				if (responseStatus != ClientResponse.Status.OK.getStatusCode()) {
-					getLogger().error("api call error " + responseStatus + "-->" + responseStr);
+					getLogger().error("Event api call error " + responseStatus + "-->" + responseStr);
 				} else {
+					getLogger().info("Event API response success ");
 					Gson gson = new Gson();
 					Type type = new TypeToken<EventModel[]>() {
 					}.getRawType();
@@ -376,7 +382,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					eventList.addAll(Arrays.asList(eventsArray));
 					if (!eventList.isEmpty()) {
 						for (EventModel eventItem : eventList) {
-							startEventTimer(eventItem);
+							getEventsAds(eventItem);
 						}
 
 					}
@@ -387,17 +393,19 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 		}
 
-		private void startEventTimer(EventModel eventModel) {
-			Timer timer = new Timer();
-			timer.schedule(new TimerTask() {
-
-				@Override
-				public void run() {
-					getEventsAds(eventModel);
-				}
-			}, 0, TimeUnit.MINUTES.toMillis(eventModel.getAdWindowTime()) + 1000);
-
-		}
+		// TODO:ANANDH
+		// private void startEventTimer(EventModel eventModel) {
+		// Timer timer = new Timer();
+		// timer.schedule(new TimerTask() {
+		//
+		// @Override
+		// public void run() {
+		// getEventsAds(eventModel);
+		// }
+		// }, 0, TimeUnit.HOURS.toMillis(eventModel.getDuration()) + 1000);
+		//
+		// }
+		Timer adsScheduler = new Timer();
 
 		protected void getEventsAds(EventModel eventModel) {
 			Client client;
@@ -414,18 +422,48 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				int responseStatus = response.getStatus();
 				String responseStr = response.getEntity(String.class);
 				if (responseStatus != ClientResponse.Status.OK.getStatusCode()) {
+					getLogger().error("ADS API response ERROR ");
 				} else {
+					getLogger().info("ADS API response success ");
 					Gson gson = new Gson();
 					Type type = new TypeToken<AdsModel[]>() {
 					}.getRawType();
 
 					AdsModel[] ads = gson.fromJson(responseStr, type);
-					if (ads != null) {
+					long timerFrequencyInMinutes = 0;
+					if (ads != null && ads.length > 0) {
 						for (AdsModel adModel : ads) {
 							getLogger().info("received ads - " + adModel.getAdPlacement());
-							scheduleAds(adModel);
-							// setupadsImages(adModel.getLogoFtpPath(), adModel.getAdPlacement());
+							setupadsImages(adModel);
 						}
+
+						timerFrequencyInMinutes = calculateFrequency(ads[0]);
+					}
+
+					if (timerFrequencyInMinutes == 0) {
+						TimeZone indianTimeZone = TimeZone.getTimeZone("Asia/Kolkata");
+						if (indianTimeZone == null)
+							indianTimeZone = TimeZone.getTimeZone("Asia/Calcutta");
+						Calendar calendar = Calendar.getInstance(indianTimeZone);
+						Date currentTime = calendar.getTime();
+						String[] split = eventModel.getStartTime().split(":");
+						calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(split[0].trim()));
+						calendar.set(Calendar.MINUTE, Integer.parseInt(split[1].trim()));
+						calendar.add(Calendar.HOUR, eventModel.getDuration());
+						Date eventEndTime = calendar.getTime();
+						if (currentTime.getTime() < eventEndTime.getTime())
+							timerFrequencyInMinutes = eventModel.getAdWindowTime();
+					}
+					getLogger().info("timer frequency: " + timerFrequencyInMinutes);
+					if (timerFrequencyInMinutes > 0) {
+						getLogger().info("Scheduling with frequency: " + timerFrequencyInMinutes);
+						adsScheduler.schedule(new TimerTask() {
+							@Override
+							public void run() {
+								getEventsAds(eventModel);
+							}
+						}, TimeUnit.MINUTES.toMillis(timerFrequencyInMinutes));
+
 					}
 
 				}
@@ -435,8 +473,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 		}
 
-		private void scheduleAds(AdsModel adModel) {
-			getLogger().info("Scheduling for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
+		private long calculateFrequency(AdsModel adModel) {
+			getLogger().info("calculating frequency for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 			TimeZone indianTimeZone = TimeZone.getTimeZone("Asia/Kolkata");
 			if (indianTimeZone == null)
 				indianTimeZone = TimeZone.getTimeZone("Asia/Calcutta");
@@ -447,16 +485,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			calendar.set(Calendar.MINUTE, Integer.parseInt(split[1].trim()));
 			Date modifiedTime = calendar.getTime();
 			long difference = modifiedTime.getTime() - currentTime.getTime();
-			if (difference >= 0) {
-				Timer timer = new Timer();
-				timer.schedule(new TimerTask() {
+			return TimeUnit.MILLISECONDS.toMinutes(difference);
 
-					@Override
-					public void run() {
-						setupadsImages(adModel);
-					}
-				}, difference);
-			}
 		}
 
 		private void setupadsImages(AdsModel adModel) {
@@ -467,12 +497,16 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			calculatedHeight = Math.round(getOverlayPositionY(srcHeight, placement));
 			getLogger().info("placement-" + placement);
 			OverlayImage wowzaImage;
-			if (Environment.isDebugMode())
-				wowzaImage = new OverlayImage(basePath + secondGraphName, 100);
-			else
+			if (Environment.isDebugMode()) {
+				StreamTarget tar = StreamTarget.valueOf(adModel.getAdTarget().toLowerCase());
+				wowzaImage = new OverlayImage(basePath + (tar == StreamTarget.facebook ? graphicName : secondGraphName),
+						100);
+				getLogger().info("Image Path: " + basePath + secondGraphName);
+			} else
 				wowzaImage = new OverlayImage(imagePath, 100);
+
 			getLogger().info("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
-	
+
 			if (calculatedWidth == 0)
 				calculatedWidth = wowzaImage.GetWidth(1.0);
 			else if (calculatedWidth != srcWidth) {
@@ -490,7 +524,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			// getLogger().info("Image path "+basePath+graphicName);
 			overlayScreenHeight = 0;
 			mainImage.addOverlayImage(wowzaImage, srcWidth - calculatedWidth, 0);
-			this.mainImage = mainImage;
+			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget());
+			targetImageMap.put(mainImageDetails.getTarget(), mainImageDetails);
 			imageTime = true;
 		}
 
@@ -506,58 +541,70 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			double scalingFactor = 1.0;
 			synchronized (lock) {
 
-				if (mainImage != null) {
+				int sourceHeight = sessionVideo.getDecoderHeight();
+				int sourceWidth = sessionVideo.getDecoderWidth();
+				for (EncoderInfo encoderInfo : encoderInfoList) {
+					if (!encoderInfo.destinationVideo.isPassThrough()) {
+						StreamTarget key = StreamManager.getInstance().getStreamTarget(encoderInfo.encodeName);
+						if (targetImageMap.containsKey(key)) {
 
-					// does not need to be done for a static graphic, but left
-					// here to build on (transparency/animation)
-					// videoBottomPadding.step();
-					// mainImage.step();
-					int sourceHeight = sessionVideo.getDecoderHeight();
-					int sourceWidth = sessionVideo.getDecoderWidth();
-					// getLogger().info("Showtime = "+showTime);
-					if (showTime) {
-						Date dNow = new Date();
-						SimpleDateFormat ft = new SimpleDateFormat("hh:mm:ss");
-						// wowzaText.SetText(ft.format(dNow));
-						// wowzaTextShadow.SetText(ft.format(dNow));
-					}
-					if (encodeSource) {
-						// put the image onto the source
-						scalingFactor = 1.0;
-						TranscoderVideoOverlayFrame overlay = new TranscoderVideoOverlayFrame(
-								mainImage.GetWidth(scalingFactor), mainImage.GetHeight(scalingFactor),
-								mainImage.GetBuffer(scalingFactor));
-						overlay.setDstX(mainImage.GetxPos(scalingFactor));
-						overlay.setDstY(mainImage.GetyPos(scalingFactor));
-						sourceVideo.addOverlay(overlayIndex, overlay);
-					} else {
-						/// put the image onto each destination but scaled to
-						/// fit
-						for (EncoderInfo encoderInfo : encoderInfoList) {
-							if (!encoderInfo.destinationVideo.isPassThrough()) {
-								int destinationHeight = encoderInfo.destinationVideo.getFrameSizeHeight();
-								scalingFactor = (double) destinationHeight / (double) sourceHeight;
-								TranscoderVideoOverlayFrame overlay = new TranscoderVideoOverlayFrame(
-										mainImage.GetWidth(scalingFactor), mainImage.GetHeight(scalingFactor),
-										mainImage.GetBuffer(scalingFactor));
-								overlay.setDstX(mainImage.GetxPos(scalingFactor));
-								overlay.setDstY(mainImage.GetyPos(scalingFactor));
-								encoderInfo.destinationVideo.addOverlay(overlayIndex, overlay);
-								// Add padding to the destination video i.e.
-								// pinch
-								encoderInfo.videoPadding[0] = 0;// (int)(((double)videoLeftPadding.getStepValue())*scalingFactor);;
-																// // left
-								encoderInfo.videoPadding[1] = 0; // top
-								encoderInfo.videoPadding[2] = 0; // right
-								encoderInfo.videoPadding[3] = (int) (overlayScreenHeight * scalingFactor);// bottom
-								encoderInfo.destinationVideo.setPadding(encoderInfo.videoPadding);
-							}
+							StreamOverlayImageDetail imageDetails = targetImageMap.get(key);
+							OverlayImage mainImage = imageDetails.getMainImage();
+//							getLogger().debug("overlaying for : " + key);
+							int destinationHeight = encoderInfo.destinationVideo.getFrameSizeHeight();
+							scalingFactor = (double) destinationHeight / (double) sourceHeight;
+							TranscoderVideoOverlayFrame overlay = new TranscoderVideoOverlayFrame(
+									mainImage.GetWidth(scalingFactor), mainImage.GetHeight(scalingFactor),
+									mainImage.GetBuffer(scalingFactor));
+							overlay.setDstX(mainImage.GetxPos(scalingFactor));
+							overlay.setDstY(mainImage.GetyPos(scalingFactor));
+							encoderInfo.destinationVideo.addOverlay(overlayIndex, overlay);
+							// Add padding to the destination video i.e.
+							// pinch
+							encoderInfo.videoPadding[0] = 0;// (int)(((double)videoLeftPadding.getStepValue())*scalingFactor);;
+															// // left
+							encoderInfo.videoPadding[1] = 0; // top
+							encoderInfo.videoPadding[2] = 0; // right
+							encoderInfo.videoPadding[3] = (int) (overlayScreenHeight * scalingFactor);// bottom
+							encoderInfo.destinationVideo.setPadding(encoderInfo.videoPadding);
 						}
 					}
 				}
+
 			}
-			return;
 		}
+	}
+
+	class StreamOverlayImageDetail {
+		private StreamTarget target = StreamTarget.None;
+		OverlayImage mainImage;
+
+		public StreamTarget getTarget() {
+			return target;
+		}
+
+		public void setTarget(StreamTarget target) {
+			this.target = target;
+		}
+
+		public OverlayImage getMainImage() {
+			return mainImage;
+		}
+
+		public void setMainImage(OverlayImage mainImage) {
+			this.mainImage = mainImage;
+		}
+
+		public StreamOverlayImageDetail(OverlayImage image, StreamTarget target) {
+			this.mainImage = image;
+			this.target = target;
+		}
+
+		public StreamOverlayImageDetail(OverlayImage image, String target) {
+			this(image, StreamTarget.valueOf(target.toLowerCase()));
+
+		}
+
 	}
 
 }
