@@ -441,6 +441,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					}
 
 					if (timerFrequencyInMinutes == 0) {
+						targetImageMap.clear();
 						TimeZone indianTimeZone = TimeZone.getTimeZone("Asia/Kolkata");
 						if (indianTimeZone == null)
 							indianTimeZone = TimeZone.getTimeZone("Asia/Calcutta");
@@ -451,9 +452,13 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 						calendar.set(Calendar.MINUTE, Integer.parseInt(split[1].trim()));
 						calendar.add(Calendar.HOUR, eventModel.getDuration()); // get the end time
 						Date eventEndTime = calendar.getTime();
+
 						if (currentTime.getTime() < eventEndTime.getTime()) {
-							long timerFrequencyInMilli = currentTime.getTime()
-									- TimeUnit.MINUTES.toMillis(eventModel.getAdWindowTime());
+							Calendar calendarNew = Calendar.getInstance(indianTimeZone);
+							Date newCurrentTime = calendarNew.getTime();
+							calendarNew.add(Calendar.MINUTE, eventModel.getAdWindowTime());
+							Date adWindowEndTime = calendarNew.getTime();
+							long timerFrequencyInMilli = adWindowEndTime.getTime() - newCurrentTime.getTime();
 							timerFrequencyInMinutes = TimeUnit.MILLISECONDS.toMinutes(timerFrequencyInMilli);
 						}
 					}
