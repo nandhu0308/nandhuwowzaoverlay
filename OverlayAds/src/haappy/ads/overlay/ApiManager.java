@@ -1,13 +1,14 @@
 package haappy.ads.overlay;
 
+import com.sun.corba.se.impl.corba.NVListImpl;
+
 public class ApiManager {
 
 	static ApiManager _instance;
 
 	private ApiManager() {
 		baseUrl = productionBaseUrl;
-		String mode = System.getenv("WOWZA_DEVELOPER_MODE");
-		if (mode != null && mode.equalsIgnoreCase("DEBUG")) {
+		if (Environment.isDebugMode()) {
 			baseUrl = debugBaseUrl;
 		}
 
