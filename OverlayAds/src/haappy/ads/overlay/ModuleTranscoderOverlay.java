@@ -466,11 +466,13 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			calculatedWidth = Math.round(getOverlayPositionX(srcWidth, placement));
 			calculatedHeight = Math.round(getOverlayPositionY(srcHeight, placement));
 			getLogger().info("placement-" + placement);
-			// TODO: FOR PROD
-			OverlayImage wowzaImage = new OverlayImage(imagePath, 100);
+			OverlayImage wowzaImage;
+			if (Environment.isDebugMode())
+				wowzaImage = new OverlayImage(basePath + secondGraphName, 100);
+			else
+				wowzaImage = new OverlayImage(imagePath, 100);
 			getLogger().info("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
-			// FOR LOCAL
-			// wowzaImage = new OverlayImage(basePath+secondGraphName, 100);
+	
 			if (calculatedWidth == 0)
 				calculatedWidth = wowzaImage.GetWidth(1.0);
 			else if (calculatedWidth != srcWidth) {
