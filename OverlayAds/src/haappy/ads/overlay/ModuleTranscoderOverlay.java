@@ -329,6 +329,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			// startImageTimer();
 		}
 
+		Timer eventTimer = new Timer();
+
 		private void getAppId() {
 			Client client;
 			WebResource webResource;
@@ -380,14 +382,25 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					EventModel[] eventsArray = gson.fromJson(responseStr, type);
 					List<EventModel> eventList = new ArrayList<>();
 					eventList.addAll(Arrays.asList(eventsArray));
-					if (!eventList.isEmpty()) {
+					if (!eventList.isEmpty()) {					
+						
 						for (EventModel eventItem : eventList) {
 							getEventsAds(eventItem);
 						}
 
+					} else {
+						eventTimer.schedule(new TimerTask() {
+
+							@Override
+							public void run() {
+								getScheduledAds(id);
+
+							}
+						}, TimeUnit.MINUTES.toMillis(1));
 					}
 				}
 			} catch (Exception e) {
+				
 				getLogger().info("api error " + e.getMessage());
 			}
 
