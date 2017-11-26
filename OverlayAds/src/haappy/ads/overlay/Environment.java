@@ -2,10 +2,14 @@ package haappy.ads.overlay;
 
 public final class Environment {
 
-	public static boolean isDebugMode()
-	{
-		String mode = System.getenv("WOWZA_DEVELOPER_MODE");
-		return mode != null && mode.equalsIgnoreCase("DEBUG");
+	static Boolean envMode = null;
+
+	public static boolean isDebugMode() {
+		if (envMode == null) {
+			String mode = System.getenv("WOWZA_DEVELOPER_MODE");
+			envMode = mode != null && mode.equalsIgnoreCase("DEBUG");
+		}
+		return envMode;
 	}
 
 }

@@ -604,7 +604,9 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 							StreamOverlayImageDetail imageDetails = targetImageMap.get(key);
 							OverlayImage mainImage = imageDetails.getMainImage();
-							logger.info("overlaying for : " + key + " with the image: " + imageDetails.getImagePath());
+							if (logger.isDebugEnabled())
+								logger.debug(
+										"overlaying for : " + key + " with the image: " + imageDetails.getImagePath());
 							int destinationHeight = encoderInfo.destinationVideo.getFrameSizeHeight();
 							scalingFactor = (double) destinationHeight / (double) sourceHeight;
 							TranscoderVideoOverlayFrame overlay = new TranscoderVideoOverlayFrame(
