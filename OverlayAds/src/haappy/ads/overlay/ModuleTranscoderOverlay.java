@@ -69,7 +69,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	ConcurrentHashMap<StreamTarget, StreamOverlayImageDetail> targetImageMap = new ConcurrentHashMap<>();
 	private int eventPosition = 0;
 	private WMSLogger logger;
-
+	Map<String, String> envMap;
 	private String headerStr = "NDcueyJyb2xlIjoiY3VzdG9tZXIiLCJ2YWx1ZSI6IjJlNjJhMjI0YjQxNDRkZDFiZjdmZWU3YTJlM2M1NjliMzI1MzQyYTIwODE4NjU4ZTdlMjMyNmRlMWM4YzZlZWEiLCJrZXkiOjEwMDAwMH0=";
 	int overlayIndex = 1;
 	private IApplicationInstance appInstance = null;
@@ -79,7 +79,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	private String basePath = null;
 	private Object lock = new Object();
 	TranscoderCreateNotifierExample trancoderNotifier = null;
-	private final String logPrefix = "######## ModuleTranscoderOverlay ########--> ";
+	public final static String logPrefix = "######## ModuleTranscoderOverlay ########--> ";
 
 	public ModuleTranscoderOverlay() {
 
@@ -101,7 +101,11 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		this.appInstance = appInstance;
 		String artworkPath = "${com.wowza.wms.context.VHostConfigHome}/content/"
 				+ appInstance.getApplication().getName();
-		Map<String, String> envMap = new HashMap<String, String>();
+		if (envMap != null) {
+			envMap.clear();
+		} else {
+			envMap = new HashMap<String, String>();
+		}
 		if (appInstance.getVHost() != null) {
 			envMap.put("com.wowza.wms.context.VHost", appInstance.getVHost().getName());
 			envMap.put("com.wowza.wms.context.VHostConfigHome", appInstance.getVHost().getHomePath());
@@ -551,7 +555,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				logInfo("Image Path: " + basePath + secondGraphName);
 			}
 			logInfo("Image Path: " + imagePath);
-			wowzaImage = new OverlayImage(imagePath, 100);
+			wowzaImage = new OverlayImage(imagePath, 100, logger, envMap);
 			logInfo("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 
 			if (calculatedWidth == 0)
