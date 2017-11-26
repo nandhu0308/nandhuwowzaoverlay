@@ -489,12 +489,13 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 						Date eventEndTime = calendar.getTime();
 
 						if (currentTime.getTime() < eventEndTime.getTime()) {
-							Calendar calendarNew = Calendar.getInstance(indianTimeZone);
-							Date newCurrentTime = calendarNew.getTime();
-							calendarNew.add(Calendar.MINUTE, eventModel.getAdWindowTime());
-							Date adWindowEndTime = calendarNew.getTime();
-							long timerFrequencyInMilli = adWindowEndTime.getTime() - newCurrentTime.getTime();
-							timerFrequencyInMinutes = TimeUnit.MILLISECONDS.toMinutes(timerFrequencyInMilli);
+							// Calendar calendarNew = Calendar.getInstance(indianTimeZone);
+							// Date newCurrentTime = calendarNew.getTime();
+							// calendarNew.add(Calendar.MINUTE, eventModel.getAdWindowTime());
+							// Date adWindowEndTime = calendarNew.getTime();
+							// long timerFrequencyInMilli = adWindowEndTime.getTime() -
+							// newCurrentTime.getTime();
+							timerFrequencyInMinutes = 1;
 						}
 					}
 					logInfo("timer frequency: " + timerFrequencyInMinutes);
@@ -529,6 +530,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(split[0].trim()));
 			calendar.set(Calendar.MINUTE, Integer.parseInt(split[1].trim()));
 			Date endTime = calendar.getTime();
+			logInfo("EndTime: " + endTime + " : CurrentTime: " + currentTime);
 			long difference = endTime.getTime() - currentTime.getTime();
 			return difference > 0 ? TimeUnit.MILLISECONDS.toMinutes(difference) : 0;
 
@@ -542,16 +544,14 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			calculatedHeight = Math.round(getOverlayPositionY(srcHeight, placement));
 			logInfo("placement-" + placement);
 			OverlayImage wowzaImage;
-			if (Environment.isDebugMode()) {
-				StreamTarget tar = StreamTarget.valueOf(adModel.getAdTarget().toLowerCase());
-				wowzaImage = new OverlayImage(basePath + (tar == StreamTarget.facebook ? graphicName : secondGraphName),
-						100);
-				logInfo("Image Path: " + basePath + secondGraphName);
-			} else {
-				wowzaImage = new OverlayImage(imagePath, 100);
-				logInfo(imagePath);
-			}
 
+			if (Environment.isDebugMode()) {
+				StreamTarget tar = StreamTarget.valueOf(adModel.getAdTarget());
+				imagePath = basePath + (tar == StreamTarget.facebook ? graphicName : secondGraphName);
+				logInfo("Image Path: " + basePath + secondGraphName);
+			}
+			logInfo("Image Path: " + imagePath);
+			wowzaImage = new OverlayImage(imagePath, 100);
 			logInfo("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 
 			if (calculatedWidth == 0)
@@ -562,6 +562,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			if (calculatedHeight != srcHeight && calculatedHeight != 0) {
 				calculatedHeight += wowzaImage.GetHeight(0.5);
 			}
+
 			// create a transparent container for the bottom third of the screen.
 			OverlayImage mainImage = new OverlayImage(0, srcHeight - calculatedHeight, srcWidth,
 					wowzaImage.GetHeight(1.0), 100);
@@ -571,7 +572,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			// logInfo("Image path "+basePath+graphicName);
 			overlayScreenHeight = 0;
 			mainImage.addOverlayImage(wowzaImage, srcWidth - calculatedWidth, 0);
-			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget());
+			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
+					imagePath);
 			logInfo("updated images for target: " + mainImageDetails.getTarget());
 			targetImageMap.put(mainImageDetails.getTarget(), mainImageDetails);
 			imageTime = true;
@@ -598,7 +600,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 							StreamOverlayImageDetail imageDetails = targetImageMap.get(key);
 							OverlayImage mainImage = imageDetails.getMainImage();
-							// logger.debug("overlaying for : " + key);
+							logger.info("overlaying for : " + key + " with the image: " + imageDetails.getImagePath());
 							int destinationHeight = encoderInfo.destinationVideo.getFrameSizeHeight();
 							scalingFactor = (double) destinationHeight / (double) sourceHeight;
 							TranscoderVideoOverlayFrame overlay = new TranscoderVideoOverlayFrame(
@@ -626,6 +628,15 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	class StreamOverlayImageDetail {
 		private StreamTarget target = StreamTarget.None;
 		OverlayImage mainImage;
+		private String imagePath;
+
+		public String getImagePath() {
+			return imagePath;
+		}
+
+		public void setImagePath(String imagePath) {
+			this.imagePath = imagePath;
+		}
 
 		public StreamTarget getTarget() {
 			return target;
@@ -643,13 +654,14 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			this.mainImage = mainImage;
 		}
 
-		public StreamOverlayImageDetail(OverlayImage image, StreamTarget target) {
+		public StreamOverlayImageDetail(OverlayImage image, StreamTarget target, String imagePath) {
 			this.mainImage = image;
 			this.target = target;
+			this.imagePath = imagePath;
 		}
 
-		public StreamOverlayImageDetail(OverlayImage image, String target) {
-			this(image, StreamTarget.valueOf(target.toLowerCase()));
+		public StreamOverlayImageDetail(OverlayImage image, String target, String imagePath) {
+			this(image, StreamTarget.valueOf(target), imagePath);
 
 		}
 
