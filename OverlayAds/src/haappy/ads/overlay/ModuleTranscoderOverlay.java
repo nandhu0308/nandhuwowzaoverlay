@@ -599,19 +599,13 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				mainImage = new OverlayImage(posX, posY, wowzaImage.GetWidth(1.0), wowzaImage.GetHeight(1.0), 100);
 			}
 
-			// Create the Wowza logo image
-			// logInfo("screen width=" + srcWidth + " calculatedWidth = " +
-			// calculatedWidth);
-			// secondImage = new OverlayImage(basePath+graphicName,100);
-			// logInfo("Image path "+basePath+graphicName);
-			int overlayScreenHeight = 0;
 			mainImage.addOverlayImage(wowzaImage, 0, 0);
 			if (isTextAvailable) {
 				mainImage.addOverlayImage(wowzaText, wowzaImage.GetxPos(1.0), wowzaImage.GetHeight(1.0));
 				wowzaText.addOverlayImage(wowzaTextShadow, 1, 1);
 			}
 			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
-					imagePath, adModel.getEventAdType(), overlayScreenHeight);
+					imagePath, adModel.getEventAdType(), 0);
 			logInfo("updated images for target: " + mainImageDetails.getTarget());
 			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
 			imageTime = true;
@@ -699,30 +693,28 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			String lowerText = adModel.getLowerText();
 			boolean isTextAvailable = lowerText != null && !lowerText.isEmpty();
 			OverlayImage mainImage, wowzaText = null, wowzaTextShadow = null;
-			int overlayScreenHeight = 0;
+			int overlayScreenTotalHeight = 0;
 			// add text bellow overlay Image
 			if (isTextAvailable) {
 				// Add Text with a drop shadow
 				wowzaText = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.white, srcWidth, 15, 100);
-				wowzaTextShadow = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.darkGray, srcWidth, 15,
+				wowzaTextShadow = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.DARK_GRAY, srcWidth, 15,
 						100);
-				overlayScreenHeight = wowzaImage.GetHeight(1.0) + wowzaText.GetHeight(1.0);
+				overlayScreenTotalHeight = wowzaImage.GetHeight(1.0) + wowzaText.GetHeight(1.0);
 				logInfo("Overlay text - " + lowerText);
 
 			} else {
-				overlayScreenHeight = wowzaImage.GetHeight(1.0);
+				overlayScreenTotalHeight = wowzaImage.GetHeight(1.0);
 			}
-			mainImage = new OverlayImage(0, srcHeight - overlayScreenHeight, srcWidth, overlayScreenHeight, 100);
-
-			mainImage.addOverlayImage(wowzaImage, srcWidth - wowzaImage.GetWidth(1.0), 0);
+			mainImage = new OverlayImage(0, srcHeight, srcWidth, overlayScreenTotalHeight, 100);
+			mainImage.addOverlayImage(wowzaImage, 0, 0);
 			if (isTextAvailable) {
-				mainImage.addOverlayImage(wowzaText, wowzaImage.GetxPos(1.0),
-						overlayScreenHeight - wowzaText.GetHeight(1.0));
+				mainImage.addOverlayImage(wowzaText, wowzaImage.GetxPos(1.0), wowzaImage.GetHeight(1.0));
 				wowzaText.addOverlayImage(wowzaTextShadow, 1, 1);
 			}
 
 			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
-					imagePath, adModel.getEventAdType(), overlayScreenHeight);
+					imagePath, adModel.getEventAdType(), overlayScreenTotalHeight);
 			logInfo("updated images for target: " + mainImageDetails.getTarget());
 			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
 		}
