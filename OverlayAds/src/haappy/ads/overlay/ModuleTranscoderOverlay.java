@@ -482,6 +482,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 						for (AdsModel adModel : ads) {
 							logInfo("received ads - " + adModel.getAdPlacement());
 							setupadsImages(adModel);
+							// setupBottomImage(adModel); TODO call this method according api response to
+							// show bottom band overlay
 						}
 
 						timerFrequencyInMinutes = calculateFrequency(ads[0]);
@@ -675,6 +677,52 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				encoderInfo.videoPadding[3] = (int) (overlayScreenHeight * scalingFactor);// bottom
 				encoderInfo.destinationVideo.setPadding(encoderInfo.videoPadding);
 			}
+		}
+
+		// call this method to show bottom overlay only
+		private void setupBottomImage(AdsModel adModel) {
+			String imagePath = adModel.getLogoFtpPath();
+			logInfo("Executing for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
+			OverlayImage wowzaImage;
+			if (Environment.isDebugMode()) {
+				StreamTarget tar = StreamTarget.valueOf(adModel.getAdTarget());
+				imagePath = basePath + (tar == StreamTarget.facebook ? graphicName : "bottom_image.png");
+				logInfo("Image Path: " + basePath + "bottom_image.png");
+			}
+			logInfo("Image Path: " + imagePath);
+			// Create the Wowza logo image
+			wowzaImage = new OverlayImage(imagePath, 100, logger, envMap);
+			logInfo("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
+
+			String lowerText = adModel.getLowerText();
+			boolean isTextAvailable = lowerText != null && !lowerText.isEmpty();
+			OverlayImage mainImage, wowzaText = null, wowzaTextShadow = null;
+
+			// add text bellow overlay Image
+			if (isTextAvailable) {
+				// Add Text with a drop shadow
+				wowzaText = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.white, srcWidth, 15, 100);
+				wowzaTextShadow = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.darkGray, srcWidth, 15,
+						100);
+				overlayScreenHeight = wowzaImage.GetHeight(1.0) + wowzaText.GetHeight(1.0);
+				logInfo("Overlay text - " + lowerText);
+
+			} else {
+				overlayScreenHeight = wowzaImage.GetHeight(1.0);
+			}
+			mainImage = new OverlayImage(0, srcHeight - overlayScreenHeight, srcWidth, overlayScreenHeight, 100);
+
+			mainImage.addOverlayImage(wowzaImage, srcWidth - wowzaImage.GetWidth(1.0), 0);
+			if (isTextAvailable) {
+				mainImage.addOverlayImage(wowzaText, wowzaImage.GetxPos(1.0),
+						overlayScreenHeight - wowzaText.GetHeight(1.0));
+				wowzaText.addOverlayImage(wowzaTextShadow, 1, 1);
+			}
+			logInfo("screen width=" + srcWidth + " calculatedWidth = " + calculatedWidth);
+			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
+					imagePath, adModel.getEventAdType());
+			logInfo("updated images for target: " + mainImageDetails.getTarget());
+			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
 		}
 	}
 
