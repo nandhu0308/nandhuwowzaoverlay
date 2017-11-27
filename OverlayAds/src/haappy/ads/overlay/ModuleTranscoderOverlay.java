@@ -539,6 +539,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			return difference > 0 ? TimeUnit.MILLISECONDS.toMinutes(difference) : 0;
 
 		}
+		
 
 		private void setupadsImages(AdsModel adModel) {
 			String imagePath = adModel.getLogoFtpPath();
@@ -556,6 +557,11 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			}
 			logInfo("Image Path: " + imagePath);
 			wowzaImage = new OverlayImage(imagePath, 100, logger, envMap);
+			
+			String lowerText = adModel.getLowerText();
+			boolean isTextAvailable = lowerText != null && !lowerText.isEmpty();
+			int textPosition = 0;
+			
 			logInfo("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 
 			if (calculatedWidth == 0)
@@ -566,16 +572,35 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			if (calculatedHeight != srcHeight && calculatedHeight != 0) {
 				calculatedHeight += wowzaImage.GetHeight(0.5);
 			}
-
-			// create a transparent container for the bottom third of the screen.
-			OverlayImage mainImage = new OverlayImage(0, srcHeight - calculatedHeight, srcWidth,
-					wowzaImage.GetHeight(1.0), 100);
+			OverlayImage mainImage, wowzaText = null, wowzaTextShadow = null;
+			
+			//add text bellow overlay Image
+			if(isTextAvailable){
+				// Add Text with a drop shadow
+				wowzaText = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.white, srcWidth, 15, 100);
+				wowzaTextShadow = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.darkGray, srcWidth, 15,
+						100);
+				textPosition = wowzaImage.GetHeight(1.0)+wowzaImage.GetHeight(1.0);
+				// create a transparent container for the bottom third of the screen.
+				 mainImage = new OverlayImage(0, srcHeight - calculatedHeight, srcWidth,
+						 textPosition, 100);
+				 logInfo("Overlay text - "+lowerText);
+				 
+			} else {
+				mainImage = new OverlayImage(0, srcHeight - calculatedHeight, srcWidth,
+						wowzaImage.GetHeight(1.0), 100);
+			}
+			
 			// Create the Wowza logo image
 			logInfo("screen width=" + srcWidth + " calculatedWidth = " + calculatedWidth);
 			// secondImage = new OverlayImage(basePath+graphicName,100);
 			// logInfo("Image path "+basePath+graphicName);
 			overlayScreenHeight = 0;
 			mainImage.addOverlayImage(wowzaImage, srcWidth - calculatedWidth, 0);
+			if(isTextAvailable){
+				mainImage.addOverlayImage(wowzaText, wowzaImage.GetxPos(1.0), wowzaImage.GetHeight(1.0));
+				wowzaText.addOverlayImage(wowzaTextShadow, 1, 1);
+			}
 			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
 					imagePath);
 			logInfo("updated images for target: " + mainImageDetails.getTarget());
