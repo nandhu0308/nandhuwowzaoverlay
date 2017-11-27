@@ -647,6 +647,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 							}
 						} else if (eventState == EventState.ended) {
 							for (AdType adType : AdType.getavailableTypes()) {
+								logInfo("clearing all the overlays");
 								encoderInfo.destinationVideo.clearOverlay(AdType.getOverlayIndex(adType));
 							}
 							eventState = EventState.idle;
