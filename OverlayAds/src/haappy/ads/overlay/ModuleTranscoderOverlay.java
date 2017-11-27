@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -67,11 +68,12 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	LiveStreamTranscoder liveStreamTranscoder;
 	TranscoderVideoDecoderNotifyExample transcoderVideo;
 	ConcurrentHashMap<StreamTarget, StreamOverlayImageDetail> targetImageMap = new ConcurrentHashMap<>();
+	ConcurrentHashMap<StreamTarget, Boolean> cleanTargetOverlayMap = new ConcurrentHashMap<>();
 	private int eventPosition = 0;
 	private WMSLogger logger;
 	Map<String, String> envMap;
 	private String headerStr = "NDcueyJyb2xlIjoiY3VzdG9tZXIiLCJ2YWx1ZSI6IjJlNjJhMjI0YjQxNDRkZDFiZjdmZWU3YTJlM2M1NjliMzI1MzQyYTIwODE4NjU4ZTdlMjMyNmRlMWM4YzZlZWEiLCJrZXkiOjEwMDAwMH0=";
-	int overlayIndex = 1;
+	int overlayLogoIndex = 1;
 	private IApplicationInstance appInstance = null;
 	/**
 	 * full path to the content directory where the graphics are kept
@@ -407,7 +409,6 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					List<EventModel> eventList = new ArrayList<>();
 					eventList.addAll(Arrays.asList(eventsArray));
 					if (!eventList.isEmpty()) {
-
 						for (EventModel eventItem : eventList) {
 							getEventsAds(eventItem);
 						}
@@ -443,6 +444,19 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		//
 		// }
 		Timer adsScheduler = new Timer();
+
+		private Date getEventEndTime(EventModel eventModel) {
+			TimeZone indianTimeZone = TimeZone.getTimeZone("Asia/Kolkata");
+			if (indianTimeZone == null)
+				indianTimeZone = TimeZone.getTimeZone("Asia/Calcutta");
+			Calendar calendar = Calendar.getInstance(indianTimeZone);
+			Date currentTime = calendar.getTime();
+			String[] split = eventModel.getStartTime().split(":");
+			calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(split[0].trim()));
+			calendar.set(Calendar.MINUTE, Integer.parseInt(split[1].trim()));
+			calendar.add(Calendar.HOUR, eventModel.getDuration()); // get the end time
+			return calendar.getTime();
+		}
 
 		protected void getEventsAds(EventModel eventModel) {
 			Client client;
@@ -508,11 +522,16 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 						adsScheduler.schedule(new TimerTask() {
 							@Override
 							public void run() {
+
 								getEventsAds(eventModel);
 							}
 						}, TimeUnit.MINUTES.toMillis(timerFrequencyInMinutes));
 
 					} else {
+						// Clean all the overlays
+						for (Entry<StreamTarget, Boolean> item : cleanTargetOverlayMap.entrySet()) {
+							item.setValue(true);
+						}
 						targetImageMap.clear();
 					}
 
@@ -601,12 +620,11 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					if (!encoderInfo.destinationVideo.isPassThrough()) {
 						StreamTarget key = StreamManager.getInstance().getStreamTarget(encoderInfo.encodeName);
 						if (targetImageMap.containsKey(key)) {
-
+							// Clear the previous overlay and then add the new overlay
+							encoderInfo.destinationVideo.clearOverlay(overlayLogoIndex);
 							StreamOverlayImageDetail imageDetails = targetImageMap.get(key);
 							OverlayImage mainImage = imageDetails.getMainImage();
-							if (logger.isDebugEnabled())
-								logger.debug(
-										"overlaying for : " + key + " with the image: " + imageDetails.getImagePath());
+							logInfo("overlaying for : " + key + " with the image: " + imageDetails.getImagePath());
 							int destinationHeight = encoderInfo.destinationVideo.getFrameSizeHeight();
 							scalingFactor = (double) destinationHeight / (double) sourceHeight;
 							TranscoderVideoOverlayFrame overlay = new TranscoderVideoOverlayFrame(
@@ -614,7 +632,9 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 									mainImage.GetBuffer(scalingFactor));
 							overlay.setDstX(mainImage.GetxPos(scalingFactor));
 							overlay.setDstY(mainImage.GetyPos(scalingFactor));
-							encoderInfo.destinationVideo.addOverlay(overlayIndex, overlay);
+							encoderInfo.destinationVideo.addOverlay(overlayLogoIndex, overlay);
+							targetImageMap.remove(key);
+							cleanTargetOverlayMap.put(key, false);
 							// Add padding to the destination video i.e.
 							// pinch
 							encoderInfo.videoPadding[0] = 0;// (int)(((double)videoLeftPadding.getStepValue())*scalingFactor);;
@@ -623,7 +643,12 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 							encoderInfo.videoPadding[2] = 0; // right
 							encoderInfo.videoPadding[3] = (int) (overlayScreenHeight * scalingFactor);// bottom
 							encoderInfo.destinationVideo.setPadding(encoderInfo.videoPadding);
+						} else if (cleanTargetOverlayMap.containsKey(key) && cleanTargetOverlayMap.get(key)) {
+							logInfo("clearing Logo overlay for target: " + key);
+							encoderInfo.destinationVideo.clearOverlay(overlayLogoIndex);
+							cleanTargetOverlayMap.remove(key);
 						}
+
 					}
 				}
 
