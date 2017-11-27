@@ -223,25 +223,25 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	}
 
 	public float getOverlayPositionX(int screenWidth, String position) {
-		float positionX = screenWidth;
+		float positionX = 0;
 		position = position.split("_")[1];
 		switch (position) {
 		case "CENTER":
 			positionX = screenWidth / 2;
 			break;
 		case "RIGHT":
-			positionX = 0;
+			positionX = screenWidth;
 			break;
 		}
 		return positionX;
 	}
 
 	public float getOverlayPositionY(int screenHeight, String position) {
-		float positionY = 0;
+		float positionY = screenHeight;
 		position = position.split("_")[0];
 		switch (position) {
 		case "TOP":
-			positionY = screenHeight;
+			positionY = 0;
 			break;
 		case "MIDDLE":
 			positionY = screenHeight / 2;
@@ -271,7 +271,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		String firstPosition = "CENTER_CENTER";
 		String secondPosition = "RIGHT_TOP";
 		// String thirdPosition = "LEFT_BOTTOM";
-		int calculatedWidth, calculatedHeight;
+		// int calculatedWidth, calculatedHeight;
 
 		public TranscoderVideoDecoderNotifyExample(int srcWidth, int srcHeight) {
 			logInfo("Creating TranscoderVideoDecoderNotifyExample");
@@ -562,8 +562,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			String imagePath = adModel.getLogoFtpPath();
 			String placement = adModel.getAdPlacement();
 			logInfo("Executing for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
-			calculatedWidth = Math.round(getOverlayPositionX(srcWidth, placement));
-			calculatedHeight = Math.round(getOverlayPositionY(srcHeight, placement));
+			int posX = Math.round(getOverlayPositionX(srcWidth, placement));
+			int posY = Math.round(getOverlayPositionY(srcHeight, placement));
 			logInfo("placement-" + placement);
 			OverlayImage wowzaImage;
 
@@ -578,18 +578,10 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 			String lowerText = adModel.getLowerText();
 			boolean isTextAvailable = lowerText != null && !lowerText.isEmpty();
-			int textPosition = 0;
+			int totalHeight = 0;
 
 			logInfo("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 
-			if (calculatedWidth == 0)
-				calculatedWidth = wowzaImage.GetWidth(1.0);
-			else if (calculatedWidth != srcWidth) {
-				calculatedWidth += wowzaImage.GetWidth(0.5);
-			}
-			if (calculatedHeight != srcHeight && calculatedHeight != 0) {
-				calculatedHeight += wowzaImage.GetHeight(0.5);
-			}
 			OverlayImage mainImage, wowzaText = null, wowzaTextShadow = null;
 
 			// add text bellow overlay Image
@@ -598,21 +590,22 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				wowzaText = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.white, srcWidth, 15, 100);
 				wowzaTextShadow = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.darkGray, srcWidth, 15,
 						100);
-				textPosition = wowzaImage.GetHeight(1.0) + wowzaImage.GetHeight(1.0);
+				totalHeight = wowzaImage.GetHeight(1.0) + wowzaText.GetHeight(1.0);
 				// create a transparent container for the bottom third of the screen.
-				mainImage = new OverlayImage(0, srcHeight - calculatedHeight, srcWidth, textPosition, 100);
+				mainImage = new OverlayImage(posX, posY, wowzaImage.GetWidth(1.0), totalHeight, 100);
 				logInfo("Overlay text - " + lowerText);
 
 			} else {
-				mainImage = new OverlayImage(0, srcHeight - calculatedHeight, srcWidth, wowzaImage.GetHeight(1.0), 100);
+				mainImage = new OverlayImage(posX, posY, wowzaImage.GetWidth(1.0), wowzaImage.GetHeight(1.0), 100);
 			}
 
 			// Create the Wowza logo image
-			logInfo("screen width=" + srcWidth + " calculatedWidth = " + calculatedWidth);
+			// logInfo("screen width=" + srcWidth + " calculatedWidth = " +
+			// calculatedWidth);
 			// secondImage = new OverlayImage(basePath+graphicName,100);
 			// logInfo("Image path "+basePath+graphicName);
 			int overlayScreenHeight = 0;
-			mainImage.addOverlayImage(wowzaImage, srcWidth - calculatedWidth, 0);
+			mainImage.addOverlayImage(wowzaImage, 0, 0);
 			if (isTextAvailable) {
 				mainImage.addOverlayImage(wowzaText, wowzaImage.GetxPos(1.0), wowzaImage.GetHeight(1.0));
 				wowzaText.addOverlayImage(wowzaTextShadow, 1, 1);
@@ -727,7 +720,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 						overlayScreenHeight - wowzaText.GetHeight(1.0));
 				wowzaText.addOverlayImage(wowzaTextShadow, 1, 1);
 			}
-			logInfo("screen width=" + srcWidth + " calculatedWidth = " + calculatedWidth);
+
 			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
 					imagePath, adModel.getEventAdType(), overlayScreenHeight);
 			logInfo("updated images for target: " + mainImageDetails.getTarget());
