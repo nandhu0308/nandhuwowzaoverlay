@@ -31,5 +31,11 @@ public class StreamManager {
 		else
 			return StreamTarget.None;
 	}
+	
+	public  String createHashMapKey(StreamTarget target, AdType adType) {
+		return target.toString() + adType.toString();
+	}
+
+	
 
 }

@@ -6,7 +6,23 @@ public class AdsModel {
 
 	private int id, logoAdId, adEventId;
 	private String timeSlotStart, timeSlotEnd, adPlacement, adTarget, geoXCoordinate, geoYCoordinate, logoFtpPath,
-			streamSource, lowerText;
+			streamSource, lowerText, adType;
+	private AdType eventAdType = AdType.NONE;
+
+	// LOGO , L-BAND,BOTTOM-BAR,VIDEO,SLIDE
+	public String getAdType() {
+		return adType != null ? adType.toUpperCase().trim() : "LOGO";
+	}
+
+	public void setAdType(String adType) {
+		this.adType = adType;
+	}
+
+	public AdType getEventAdType() {
+		if (eventAdType == AdType.NONE && !getAdType().isEmpty())
+			eventAdType = AdType.valueOf(getAdType());
+		return eventAdType;
+	}
 
 	public String getStreamSource() {
 		return streamSource;
