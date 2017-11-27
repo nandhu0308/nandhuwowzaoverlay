@@ -265,7 +265,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		private String fullOverlayImage = "full_mage.png";
 		int srcWidth, srcHeight;
 		int childPosition;
-		int overlayScreenHeight;
+
 		int overlayWidth;
 		private String overlayText = "Haappy app overlay example transcoder with bottom text";
 		String firstPosition = "CENTER_CENTER";
@@ -432,7 +432,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				}
 			} catch (Exception e) {
 
-				logInfo("api error " + e.getMessage());
+				logError("Get event schedule api error " + e.getMessage());
 			}
 
 		}
@@ -536,7 +536,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 				}
 			} catch (Exception e) {
-				logInfo("api error " + e.getMessage());
+				logError("Get Ads api error " + e.getMessage());
 			}
 
 		}
@@ -567,11 +567,12 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			logInfo("placement-" + placement);
 			OverlayImage wowzaImage;
 
-			if (Environment.isDebugMode()) {
-				StreamTarget tar = StreamTarget.valueOf(adModel.getAdTarget());
-				imagePath = basePath + (tar == StreamTarget.facebook ? graphicName : secondGraphName);
-				logInfo("Image Path: " + basePath + secondGraphName);
-			}
+			// if (Environment.isDebugMode()) {
+			// StreamTarget tar = StreamTarget.valueOf(adModel.getAdTarget());
+			// imagePath = basePath + (tar == StreamTarget.facebook ? graphicName :
+			// secondGraphName);
+			// logInfo("Image Path: " + basePath + secondGraphName);
+			// }
 			logInfo("Image Path: " + imagePath);
 			wowzaImage = new OverlayImage(imagePath, 100, logger, envMap);
 
@@ -610,14 +611,14 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			logInfo("screen width=" + srcWidth + " calculatedWidth = " + calculatedWidth);
 			// secondImage = new OverlayImage(basePath+graphicName,100);
 			// logInfo("Image path "+basePath+graphicName);
-			overlayScreenHeight = 0;
+			int overlayScreenHeight = 0;
 			mainImage.addOverlayImage(wowzaImage, srcWidth - calculatedWidth, 0);
 			if (isTextAvailable) {
 				mainImage.addOverlayImage(wowzaText, wowzaImage.GetxPos(1.0), wowzaImage.GetHeight(1.0));
 				wowzaText.addOverlayImage(wowzaTextShadow, 1, 1);
 			}
 			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
-					imagePath, adModel.getEventAdType());
+					imagePath, adModel.getEventAdType(), overlayScreenHeight);
 			logInfo("updated images for target: " + mainImageDetails.getTarget());
 			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
 			imageTime = true;
@@ -681,7 +682,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 												// // left
 				encoderInfo.videoPadding[1] = 0; // top
 				encoderInfo.videoPadding[2] = 0; // right
-				encoderInfo.videoPadding[3] = (int) (overlayScreenHeight * scalingFactor);// bottom
+				encoderInfo.videoPadding[3] = (int) (imageDetails.getOverlayScreenHeight() * scalingFactor);// bottom
 				encoderInfo.destinationVideo.setPadding(encoderInfo.videoPadding);
 			}
 		}
@@ -691,11 +692,12 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			String imagePath = adModel.getLogoFtpPath();
 			logInfo("Executing for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 			OverlayImage wowzaImage;
-			if (Environment.isDebugMode()) {
-				StreamTarget tar = StreamTarget.valueOf(adModel.getAdTarget());
-				imagePath = basePath + (tar == StreamTarget.facebook ? graphicName : "bottom_image.png");
-				logInfo("Image Path: " + basePath + "bottom_image.png");
-			}
+			// if (Environment.isDebugMode()) {
+			// StreamTarget tar = StreamTarget.valueOf(adModel.getAdTarget());
+			// imagePath = basePath + (tar == StreamTarget.facebook ? graphicName :
+			// "bottom_image.png");
+			// logInfo("Image Path: " + basePath + "bottom_image.png");
+			// }
 			logInfo("Image Path: " + imagePath);
 			// Create the Wowza logo image
 			wowzaImage = new OverlayImage(imagePath, 100, logger, envMap);
@@ -704,7 +706,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			String lowerText = adModel.getLowerText();
 			boolean isTextAvailable = lowerText != null && !lowerText.isEmpty();
 			OverlayImage mainImage, wowzaText = null, wowzaTextShadow = null;
-
+			int overlayScreenHeight = 0;
 			// add text bellow overlay Image
 			if (isTextAvailable) {
 				// Add Text with a drop shadow
@@ -727,7 +729,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			}
 			logInfo("screen width=" + srcWidth + " calculatedWidth = " + calculatedWidth);
 			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
-					imagePath, adModel.getEventAdType());
+					imagePath, adModel.getEventAdType(), overlayScreenHeight);
 			logInfo("updated images for target: " + mainImageDetails.getTarget());
 			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
 		}
@@ -739,6 +741,23 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		private String imagePath;
 		private AdType adType;
 		private String key = "";
+		private int overlayScreenHeight, overlayScreenWidth;
+
+		public int getOverlayScreenHeight() {
+			return overlayScreenHeight;
+		}
+
+		public void setOverlayScreenHeight(int overlayScreenHeight) {
+			this.overlayScreenHeight = overlayScreenHeight;
+		}
+
+		public int getOverlayScreenWidth() {
+			return overlayScreenWidth;
+		}
+
+		public void setOverlayScreenWidth(int overlayScreenWidth) {
+			this.overlayScreenWidth = overlayScreenWidth;
+		}
 
 		public String getHashMapKey() {
 			if (key != null && key.isEmpty()) {
@@ -779,15 +798,18 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			this.mainImage = mainImage;
 		}
 
-		public StreamOverlayImageDetail(OverlayImage image, StreamTarget target, String imagePath, AdType adType) {
+		public StreamOverlayImageDetail(OverlayImage image, StreamTarget target, String imagePath, AdType adType,
+				int overlayScreenHeight) {
 			this.mainImage = image;
 			this.target = target;
 			this.imagePath = imagePath;
 			this.adType = adType;
+			this.overlayScreenHeight = overlayScreenHeight;
 		}
 
-		public StreamOverlayImageDetail(OverlayImage image, String target, String imagePath, AdType adType) {
-			this(image, StreamTarget.valueOf(target), imagePath, adType);
+		public StreamOverlayImageDetail(OverlayImage image, String target, String imagePath, AdType adType,
+				int overlayScreenHeight) {
+			this(image, StreamTarget.valueOf(target), imagePath, adType, overlayScreenHeight);
 
 		}
 
