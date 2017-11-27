@@ -481,9 +481,15 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					if (ads != null && ads.length > 0) {
 						for (AdsModel adModel : ads) {
 							logInfo("received ads - " + adModel.getAdPlacement());
-							setupadsImages(adModel);
-							// setupBottomImage(adModel); TODO call this method according api response to
-							// show bottom band overlay
+							switch (adModel.getEventAdType()) {
+							case LOGO:
+								setupadsImages(adModel);
+								break;
+							case BOTTOM_BAR:
+								setupBottomImage(adModel);
+								break;
+							}
+
 						}
 
 						timerFrequencyInMinutes = calculateFrequency(ads[0]);
@@ -635,12 +641,12 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					if (!encoderInfo.destinationVideo.isPassThrough()) {
 						if (eventState == EventState.started) {
 							StreamTarget key = StreamManager.getInstance().getStreamTarget(encoderInfo.encodeName);
-							for (AdType adType : AdType.values()) {
+							for (AdType adType : AdType.getavailableTypes()) {
 								applyOverlay(sourceHeight, encoderInfo,
 										StreamManager.getInstance().createHashMapKey(key, adType));
 							}
 						} else if (eventState == EventState.ended) {
-							for (AdType adType : AdType.values()) {
+							for (AdType adType : AdType.getavailableTypes()) {
 								encoderInfo.destinationVideo.clearOverlay(AdType.getOverlayIndex(adType));
 							}
 							eventState = EventState.idle;

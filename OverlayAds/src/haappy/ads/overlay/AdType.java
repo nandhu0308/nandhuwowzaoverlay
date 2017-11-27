@@ -1,5 +1,9 @@
 package haappy.ads.overlay;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public enum AdType {
 	NONE, LOGO, L_BAND, BOTTOM_BAR, VIDEO, SLIDE;
 	public static int getOverlayIndex(AdType adType) {
@@ -26,4 +30,9 @@ public enum AdType {
 		}
 		return result;
 	}
+
+	public static List<AdType> getavailableTypes() {
+		return Arrays.asList(LOGO, BOTTOM_BAR);
+	}
+
 }
