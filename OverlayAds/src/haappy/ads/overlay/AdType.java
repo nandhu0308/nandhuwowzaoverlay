@@ -32,7 +32,7 @@ public enum AdType {
 	}
 
 	public static List<AdType> getavailableTypes() {
-		return Arrays.asList(LOGO, BOTTOM_BAR);
+		return Arrays.asList(LOGO, BOTTOM_BAR, L_BAND);
 	}
 
 }

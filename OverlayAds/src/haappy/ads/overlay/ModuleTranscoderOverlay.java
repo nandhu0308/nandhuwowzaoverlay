@@ -607,6 +607,21 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
 		}
 
+		// show full image overlay
+		private void setupFullscreenOverlay(AdsModel adModel) {
+			String imagePath = adModel.getLogoFtpPath();
+			OverlayImage wowzaImage, mainImage;
+			logInfo("Image Path: " + imagePath);
+			wowzaImage = new OverlayImage(imagePath, 100, logger, envMap);
+			logInfo("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
+			mainImage = new OverlayImage(0, 0, srcWidth, srcHeight, 100);
+			mainImage.addOverlayImage(wowzaImage, 0, 0);
+			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
+					imagePath, adModel.getEventAdType(), 0);
+			logInfo("updated images for target: " + mainImageDetails.getTarget());
+			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
+		}
+
 		private void setupadsImages(AdsModel adModel) {
 			String imagePath = adModel.getLogoFtpPath();
 			String placement = adModel.getAdPlacement();
@@ -720,7 +735,12 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 						mainImage.GetHeight(scalingFactor), mainImage.GetBuffer(scalingFactor));
 				if (adType == AdType.BOTTOM_BAR) {
 					overlay.setDstY(destinationHeight);
-				} else {
+				} else if (adType == AdType.L_BAND) {
+					overlay.setDstX(0);
+					overlay.setDstY(0);
+				}
+
+				else {
 					overlay.setDstX(mainImage.GetxPos(scalingFactor));
 					overlay.setDstY(mainImage.GetyPos(scalingFactor));
 				}
@@ -728,34 +748,18 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				targetImageMap.remove(key);
 				// Add padding to the destination video i.e.
 				// pinch
-				encoderInfo.videoPadding[0] = 0;// (int)(((double)videoLeftPadding.getStepValue())*scalingFactor);;
-												// // left
-				encoderInfo.videoPadding[1] = 0; // top
-				encoderInfo.videoPadding[2] = 0; // right
-				encoderInfo.videoPadding[3] = (int) (imageDetails.getOverlayScreenHeight() * scalingFactor);//
-				// bottom
+				VideoPadding padding = imageDetails.getVideoPadding();
+				encoderInfo.videoPadding[0] = padding.getLeft(1);
+				encoderInfo.videoPadding[1] = padding.getTop(1);
+				encoderInfo.videoPadding[2] = padding.getRight(1);
+				encoderInfo.videoPadding[3] = padding.getBottom(1);
 				encoderInfo.destinationVideo.setPadding(encoderInfo.videoPadding);
 				encoderInfo.destinationVideo.addOverlay(overlayLogoIndex, overlay);
 			}
 		}
-		
-		//show full image overlay
-		private void setupFullscreenOverlay(AdsModel adModel){
-			String imagePath = basePath+"haappy_lBand.png";
-			OverlayImage wowzaImage, mainImage;
-			logInfo("Image Path: " + imagePath);
-			wowzaImage = new OverlayImage(imagePath, 100, logger, envMap);
-			logInfo("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
-			mainImage = new OverlayImage(0, 0, srcWidth, srcHeight, 100);
-			mainImage.addOverlayImage(wowzaImage, 0,0);
-			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
-					imagePath, adModel.getEventAdType(), 0);
-			logInfo("updated images for target: " + mainImageDetails.getTarget());
-			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
-		}
 
 	}
-	
+
 	class StreamOverlayImageDetail {
 		private StreamTarget target = StreamTarget.None;
 		OverlayImage mainImage;
@@ -763,6 +767,15 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		private AdType adType;
 		private String key = "";
 		private int overlayScreenHeight, overlayScreenWidth;
+		private VideoPadding videoPadding;
+
+		public VideoPadding getVideoPadding() {
+			return videoPadding;
+		}
+
+		public void setVideoPadding(VideoPadding videoPadding) {
+			this.videoPadding = videoPadding;
+		}
 
 		public int getOverlayScreenHeight() {
 			return overlayScreenHeight;
@@ -826,6 +839,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			this.imagePath = imagePath;
 			this.adType = adType;
 			this.overlayScreenHeight = overlayScreenHeight;
+			this.videoPadding = VideoPadding.getVideoPadding(adType);
 		}
 
 		public StreamOverlayImageDetail(OverlayImage image, String target, String imagePath, AdType adType,
