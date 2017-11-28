@@ -600,7 +600,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			}
 
 			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
-					imagePath, adModel.getEventAdType(), overlayScreenTotalHeight);
+					imagePath, adModel.getEventAdType(), 0);
 			logInfo("updated images for target: " + mainImageDetails.getTarget());
 			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
 		}
