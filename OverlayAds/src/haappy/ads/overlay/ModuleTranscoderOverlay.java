@@ -754,6 +754,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
 		}
 
+	}
+	
 	class StreamOverlayImageDetail {
 		private StreamTarget target = StreamTarget.None;
 		OverlayImage mainImage;
