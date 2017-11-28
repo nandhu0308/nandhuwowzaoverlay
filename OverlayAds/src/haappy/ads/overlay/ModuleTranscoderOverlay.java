@@ -376,7 +376,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				int responseStatus = response.getStatus();
 				String responseStr = response.getEntity(String.class);
 				if (responseStatus != ClientResponse.Status.OK.getStatusCode()) {
-					logError("Channel Id api call error " + responseStatus + "-->" + responseStr);
+					logInfo("No Channel configured for the application name" + appInstance.getApplication().getName());
 				} else {
 					JSONObject responseObject = new JSONObject(responseStr);
 					String id = responseObject.getString("channelId");
@@ -384,7 +384,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					getScheduledAds(id);
 				}
 			} catch (Exception e) {
-				logInfo("api error " + e.getMessage());
+				logError("api error " + e.getMessage());
 			}
 		}
 
