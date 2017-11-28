@@ -558,6 +558,49 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 		}
 
+		// call this method to show bottom overlay only
+		private void setupBottomImage(AdsModel adModel) {
+			String imagePath = adModel.getLogoFtpPath();
+			logInfo("Executing for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
+			OverlayImage wowzaImage;
+			int posX = Math.round(getOverlayPositionX(srcWidth, "BOTTOM_LEFT"));
+			int posY = Math.round(getOverlayPositionY(srcHeight, "BOTTOM_LEFT"));
+
+			logInfo("Image Path: " + imagePath);
+			// Create the Wowza logo image
+			wowzaImage = new OverlayImage(imagePath, 100, logger, envMap);
+			logInfo("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
+
+			String lowerText = adModel.getLowerText();
+			boolean isTextAvailable = lowerText != null && !lowerText.isEmpty();
+			OverlayImage mainImage, wowzaText = null, wowzaTextShadow = null;
+			int overlayScreenTotalHeight = 0;
+			// add text bellow overlay Image
+			if (isTextAvailable) {
+				// Add Text with a drop shadow
+				wowzaText = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.white, srcWidth, 15, 100);
+				wowzaTextShadow = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.DARK_GRAY, srcWidth, 15,
+						100);
+				overlayScreenTotalHeight = wowzaImage.GetHeight(1.0) + wowzaText.GetHeight(1.0);
+				logInfo("Overlay text - " + lowerText);
+
+			} else {
+				overlayScreenTotalHeight = wowzaImage.GetHeight(1.0);
+			}
+			mainImage = new OverlayImage(posX, posY, srcWidth, overlayScreenTotalHeight, 100);
+			mainImage.addOverlayImage(wowzaImage, 0, 0);
+			logInfo(" Width * Height: " + srcWidth + " * " + srcHeight);
+			if (isTextAvailable) {
+				mainImage.addOverlayImage(wowzaText, wowzaImage.GetxPos(1.0), wowzaImage.GetHeight(1.0));
+				wowzaText.addOverlayImage(wowzaTextShadow, 1, 1);
+			}
+
+			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
+					imagePath, adModel.getEventAdType(), overlayScreenTotalHeight);
+			logInfo("updated images for target: " + mainImageDetails.getTarget());
+			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
+		}
+
 		private void setupadsImages(AdsModel adModel) {
 			String imagePath = adModel.getLogoFtpPath();
 			String placement = adModel.getAdPlacement();
@@ -575,6 +618,13 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			// }
 			logInfo("Image Path: " + imagePath);
 			wowzaImage = new OverlayImage(imagePath, 100, logger, envMap);
+			//Calculate center Points
+			String x_placement = placement.split("_")[1];
+			String y_placement = placement.split("_")[0];
+			if (x_placement.equalsIgnoreCase("CENTER"))
+				posX = posX - (wowzaImage.GetWidth(0.5));
+			if (y_placement.equalsIgnoreCase("MIDDLE"))
+				posY = posY - (wowzaImage.GetHeight(0.5));
 
 			String lowerText = adModel.getLowerText();
 			boolean isTextAvailable = lowerText != null && !lowerText.isEmpty();
@@ -631,7 +681,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 							StreamTarget key = StreamManager.getInstance().getStreamTarget(encoderInfo.encodeName);
 							for (AdType adType : AdType.getavailableTypes()) {
 								applyOverlay(sourceHeight, encoderInfo,
-										StreamManager.getInstance().createHashMapKey(key, adType));
+										StreamManager.getInstance().createHashMapKey(key, adType), adType);
 							}
 						} else if (eventState == EventState.ended) {
 							for (AdType adType : AdType.getavailableTypes()) {
@@ -646,7 +696,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			}
 		}
 
-		private void applyOverlay(int sourceHeight, EncoderInfo encoderInfo, String key) {
+		private void applyOverlay(int sourceHeight, EncoderInfo encoderInfo, String key, AdType adType) {
 			double scalingFactor;
 			if (targetImageMap.containsKey(key)) {
 				// Clear the previous overlay and then add the new overlay
@@ -657,11 +707,18 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				logInfo("overlaying for : " + key + " with the image: " + imageDetails.getImagePath());
 				int destinationHeight = encoderInfo.destinationVideo.getFrameSizeHeight();
 				scalingFactor = (double) destinationHeight / (double) sourceHeight;
+				logInfo("destinationHeight: " + destinationHeight + " sourceHeight:  " + sourceHeight
+						+ " Scaling Factor: " + scalingFactor);
+
 				TranscoderVideoOverlayFrame overlay = new TranscoderVideoOverlayFrame(mainImage.GetWidth(scalingFactor),
 						mainImage.GetHeight(scalingFactor), mainImage.GetBuffer(scalingFactor));
-				overlay.setDstX(mainImage.GetxPos(scalingFactor));
-				overlay.setDstY(mainImage.GetyPos(scalingFactor));
-				encoderInfo.destinationVideo.addOverlay(overlayLogoIndex, overlay);
+				if (adType == AdType.BOTTOM_BAR) {
+					overlay.setDstY(destinationHeight);
+				} else {
+					overlay.setDstX(mainImage.GetxPos(scalingFactor));
+					overlay.setDstY(mainImage.GetyPos(scalingFactor));
+				}
+
 				targetImageMap.remove(key);
 				// Add padding to the destination video i.e.
 				// pinch
@@ -669,55 +726,13 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 												// // left
 				encoderInfo.videoPadding[1] = 0; // top
 				encoderInfo.videoPadding[2] = 0; // right
-				encoderInfo.videoPadding[3] = (int) (imageDetails.getOverlayScreenHeight() * scalingFactor);// bottom
+				encoderInfo.videoPadding[3] = (int) (imageDetails.getOverlayScreenHeight() * scalingFactor);//
+				// bottom
 				encoderInfo.destinationVideo.setPadding(encoderInfo.videoPadding);
+				encoderInfo.destinationVideo.addOverlay(overlayLogoIndex, overlay);
 			}
 		}
 
-		// call this method to show bottom overlay only
-		private void setupBottomImage(AdsModel adModel) {
-			String imagePath = adModel.getLogoFtpPath();
-			logInfo("Executing for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
-			OverlayImage wowzaImage;
-			// if (Environment.isDebugMode()) {
-			// StreamTarget tar = StreamTarget.valueOf(adModel.getAdTarget());
-			// imagePath = basePath + (tar == StreamTarget.facebook ? graphicName :
-			// "bottom_image.png");
-			// logInfo("Image Path: " + basePath + "bottom_image.png");
-			// }
-			logInfo("Image Path: " + imagePath);
-			// Create the Wowza logo image
-			wowzaImage = new OverlayImage(imagePath, 100, logger, envMap);
-			logInfo("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
-
-			String lowerText = adModel.getLowerText();
-			boolean isTextAvailable = lowerText != null && !lowerText.isEmpty();
-			OverlayImage mainImage, wowzaText = null, wowzaTextShadow = null;
-			int overlayScreenTotalHeight = 0;
-			// add text bellow overlay Image
-			if (isTextAvailable) {
-				// Add Text with a drop shadow
-				wowzaText = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.white, srcWidth, 15, 100);
-				wowzaTextShadow = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.DARK_GRAY, srcWidth, 15,
-						100);
-				overlayScreenTotalHeight = wowzaImage.GetHeight(1.0) + wowzaText.GetHeight(1.0);
-				logInfo("Overlay text - " + lowerText);
-
-			} else {
-				overlayScreenTotalHeight = wowzaImage.GetHeight(1.0);
-			}
-			mainImage = new OverlayImage(0, srcHeight, srcWidth, overlayScreenTotalHeight, 100);
-			mainImage.addOverlayImage(wowzaImage, 0, 0);
-			if (isTextAvailable) {
-				mainImage.addOverlayImage(wowzaText, wowzaImage.GetxPos(1.0), wowzaImage.GetHeight(1.0));
-				wowzaText.addOverlayImage(wowzaTextShadow, 1, 1);
-			}
-
-			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
-					imagePath, adModel.getEventAdType(), overlayScreenTotalHeight);
-			logInfo("updated images for target: " + mainImageDetails.getTarget());
-			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
-		}
 	}
 
 	class StreamOverlayImageDetail {
