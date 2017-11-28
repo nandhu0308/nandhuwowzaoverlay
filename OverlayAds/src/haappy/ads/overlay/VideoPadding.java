@@ -39,8 +39,8 @@ public class VideoPadding {
 		VideoPadding padding = new VideoPadding();
 		switch (adType) {
 		case L_BAND:
-//			padding.setLeft(200);
-//			padding.setBottom(150);
+			padding.setLeft(200);
+			padding.setBottom(150);
 			break;
 		default:
 			break;
