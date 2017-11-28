@@ -92,6 +92,10 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		logger.info(logPrefix + info);
 	}
 
+	private void logDebug(String msg) {
+		logger.debug(logPrefix + msg);
+	}
+
 	private void logError(String error) {
 		logger.error(logPrefix + error);
 	}
@@ -400,7 +404,16 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				int responseStatus = response.getStatus();
 				String responseStr = response.getEntity(String.class);
 				if (responseStatus != ClientResponse.Status.OK.getStatusCode()) {
-					logError("Event api call error " + responseStatus + "-->" + responseStr);
+					int eventCallbackWindow = 10;// in minutes
+					logDebug("No Events available. scheduling for request in next " + eventCallbackWindow + " mins");
+					eventTimer.schedule(new TimerTask() {
+						@Override
+						public void run() {
+							getScheduledAds(id);
+
+						}
+					}, TimeUnit.MINUTES.toMillis(eventCallbackWindow)); // TODO: ANANDH how to find the optimal ping
+																		// time?
 				} else {
 					logInfo("Event API response success ");
 					Gson gson = new Gson();
@@ -419,15 +432,6 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 							}
 						}, getEventEndTimeForTimerSchedule(event));
 
-					} else {
-						eventTimer.schedule(new TimerTask() {
-
-							@Override
-							public void run() {
-								getScheduledAds(id);
-
-							}
-						}, TimeUnit.MINUTES.toMillis(10)); // TODO: ANANDH how to find the optimal ping time?
 					}
 				}
 			} catch (Exception e) {
@@ -618,7 +622,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			// }
 			logInfo("Image Path: " + imagePath);
 			wowzaImage = new OverlayImage(imagePath, 100, logger, envMap);
-			//Calculate center Points
+			// Calculate center Points
 			String x_placement = placement.split("_")[1];
 			String y_placement = placement.split("_")[0];
 			if (x_placement.equalsIgnoreCase("CENTER"))
