@@ -602,7 +602,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			}
 
 			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
-					imagePath, adModel.getEventAdType(), 0);
+					imagePath, adModel.getEventAdType(), srcWidth, srcHeight);
 			logInfo("updated images for target: " + mainImageDetails.getTarget());
 			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
 		}
@@ -617,7 +617,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			mainImage = new OverlayImage(0, 0, srcWidth, srcHeight, 100);
 			mainImage.addOverlayImage(wowzaImage, 0, 0);
 			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
-					imagePath, adModel.getEventAdType(), 0);
+					imagePath, adModel.getEventAdType(), srcWidth, srcHeight);
 			logInfo("updated images for target: " + mainImageDetails.getTarget());
 			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
 		}
@@ -676,7 +676,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				wowzaText.addOverlayImage(wowzaTextShadow, 1, 1);
 			}
 			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
-					imagePath, adModel.getEventAdType(), 0);
+					imagePath, adModel.getEventAdType(), srcWidth, srcHeight);
 			logInfo("updated images for target: " + mainImageDetails.getTarget());
 			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
 			imageTime = true;
@@ -766,7 +766,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		private String imagePath;
 		private AdType adType;
 		private String key = "";
-		private int overlayScreenHeight, overlayScreenWidth;
+		private int srcHeight, srcWidth;
 		private VideoPadding videoPadding;
 
 		public VideoPadding getVideoPadding() {
@@ -777,20 +777,22 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			this.videoPadding = videoPadding;
 		}
 
-		public int getOverlayScreenHeight() {
-			return overlayScreenHeight;
+		
+
+		public int getSrcHeight() {
+			return srcHeight;
 		}
 
-		public void setOverlayScreenHeight(int overlayScreenHeight) {
-			this.overlayScreenHeight = overlayScreenHeight;
+		public void setSrcHeight(int srcHeight) {
+			this.srcHeight = srcHeight;
 		}
 
-		public int getOverlayScreenWidth() {
-			return overlayScreenWidth;
+		public int getSrcWidth() {
+			return srcWidth;
 		}
 
-		public void setOverlayScreenWidth(int overlayScreenWidth) {
-			this.overlayScreenWidth = overlayScreenWidth;
+		public void setSrcWidth(int srcWidth) {
+			this.srcWidth = srcWidth;
 		}
 
 		public String getHashMapKey() {
@@ -833,18 +835,19 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		}
 
 		public StreamOverlayImageDetail(OverlayImage image, StreamTarget target, String imagePath, AdType adType,
-				int overlayScreenHeight) {
+				int srcWidth, int srcHeight) {
 			this.mainImage = image;
 			this.target = target;
 			this.imagePath = imagePath;
 			this.adType = adType;
-			this.overlayScreenHeight = overlayScreenHeight;
-			this.videoPadding = VideoPadding.getVideoPadding(adType);
+			this.srcWidth = srcWidth;
+			this.srcHeight = srcHeight;
+			this.videoPadding = VideoPadding.getVideoPadding(adType, srcWidth, srcHeight);
 		}
 
 		public StreamOverlayImageDetail(OverlayImage image, String target, String imagePath, AdType adType,
-				int overlayScreenHeight) {
-			this(image, StreamTarget.valueOf(target), imagePath, adType, overlayScreenHeight);
+				int srcWidth, int srcHeight) {
+			this(image, StreamTarget.valueOf(target), imagePath, adType, srcWidth, srcHeight);
 
 		}
 
