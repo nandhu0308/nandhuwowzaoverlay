@@ -492,6 +492,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 							case BOTTOM_BAR:
 								setupBottomImage(adModel);
 								break;
+							case L_BAND:
+								setupFullscreenOverlay(adModel);
 							}
 
 						}
@@ -736,8 +738,21 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				encoderInfo.destinationVideo.addOverlay(overlayLogoIndex, overlay);
 			}
 		}
-
-	}
+		
+		//show full image overlay
+		private void setupFullscreenOverlay(AdsModel adModel){
+			String imagePath = basePath+"haappy_lBand.png";
+			OverlayImage wowzaImage, mainImage;
+			logInfo("Image Path: " + imagePath);
+			wowzaImage = new OverlayImage(imagePath, 100, logger, envMap);
+			logInfo("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
+			mainImage = new OverlayImage(0, 0, srcWidth, srcHeight, 100);
+			mainImage.addOverlayImage(wowzaImage, 0,0);
+			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
+					imagePath, adModel.getEventAdType(), 0);
+			logInfo("updated images for target: " + mainImageDetails.getTarget());
+			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
+		}
 
 	class StreamOverlayImageDetail {
 		private StreamTarget target = StreamTarget.None;
