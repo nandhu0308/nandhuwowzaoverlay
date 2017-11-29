@@ -22,7 +22,6 @@
 	<classpathentry kind="lib" path="C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.1/lib/joda-time-2.3.jar"/>
 	<classpathentry kind="lib" path="C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.1/lib/jsr311-api-1.1.1.jar"/>
 	<classpathentry kind="lib" path="C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.1/lib/log4j-1.2.17.jar"/>
-	<classpathentry kind="lib" path="C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.1/lib/LoopUntilLive.jar"/>
 	<classpathentry kind="lib" path="C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.1/lib/org.json.jar"/>
 	<classpathentry kind="lib" path="C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.1/lib/OverlayAds.jar"/>
 	<classpathentry kind="lib" path="C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.1/lib/slf4j-api-1.6.4.jar"/>
@@ -189,11 +188,6 @@
 			<attribute name="javadoc_location" value="file:/C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.1/documentation/serverapi"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.1/lib/wms-srt.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="file:/C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.1/documentation/serverapi"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="lib" path="C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.1/lib/wms-stats.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="file:/C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.1/documentation/serverapi"/>
@@ -244,6 +238,5 @@
 			<attribute name="javadoc_location" value="file:/C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.1/documentation/serverapi"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.1/lib/wse-plugin-loadandlockappinstances.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
