@@ -16,3 +16,5 @@
 /.recommenders/index/http___download_eclipse_org_recommenders_models_oxygen_/write.lock
 /OverlayAds/ - Copy.classpath
 /OverlayAds/build - Copy.xml
+/.recommenders/
+/VideoAdBreak/bin
