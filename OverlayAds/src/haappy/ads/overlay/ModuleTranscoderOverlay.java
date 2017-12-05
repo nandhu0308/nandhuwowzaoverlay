@@ -256,6 +256,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 	class TranscoderVideoDecoderNotifyExample extends TranscoderVideoDecoderNotifyBase {
 
+		private static final int POLLING_FREQUENCY = 1000;
 		private OverlayImage wowzaText = null;
 		private OverlayImage wowzaTextShadow = null;
 		List<EncoderInfo> encoderInfoList = new ArrayList<EncoderInfo>();
@@ -500,7 +501,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 						timerFrequencyInMinutes = calculateFrequency(ads[0]);
 					}
-
+					boolean startPolling = false;
 					if (timerFrequencyInMinutes == 0) {
 						targetImageMap.clear();
 						TimeZone indianTimeZone = TimeZone.getTimeZone("Asia/Kolkata");
@@ -522,6 +523,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 							// long timerFrequencyInMilli = adWindowEndTime.getTime() -
 							// newCurrentTime.getTime();
 							timerFrequencyInMinutes = 1;
+							startPolling = true;
 						}
 					}
 					logDebug("timer frequency: " + timerFrequencyInMinutes);
@@ -533,7 +535,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 								getEventsAds(eventModel);
 							}
-						}, TimeUnit.MINUTES.toMillis(timerFrequencyInMinutes));
+						}, !startPolling ? TimeUnit.MINUTES.toMillis(timerFrequencyInMinutes) : POLLING_FREQUENCY);
 
 					} else {
 
