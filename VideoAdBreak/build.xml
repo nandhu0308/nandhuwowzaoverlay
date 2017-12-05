@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project name="VideoAdBreak" default="jar" basedir="..">
 	
-	<property name="wowza.lib.dir" value="C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.1/lib"/>
+	<property name="wowza.lib.dir" value="C:/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.3/lib"/>
 	<property name="jar.filename" value="VideoAdBreak.jar"/>
 	<property name="core.build.dir" value="bin"/>
 
