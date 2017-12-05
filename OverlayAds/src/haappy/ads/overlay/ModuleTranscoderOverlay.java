@@ -396,11 +396,11 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				// String url = "http://localhost:8080/LLCWeb/engage/ads/get/event/channel/"+id;
 				String url = ApiManager.getInstance().getChannelEventApi(id);
 				webResource = client.resource(url);
-				logInfo("calling api getChannelEventApi");
+				logDebug("calling api getChannelEventApi");
 				ClientResponse response = webResource.accept(MediaType.APPLICATION_JSON)
 						.type(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, headerStr)
 						.get(ClientResponse.class);
-				logInfo("completed api getChannelEventApi");
+				logDebug("completed api getChannelEventApi");
 				int responseStatus = response.getStatus();
 				String responseStr = response.getEntity(String.class);
 				if (responseStatus != ClientResponse.Status.OK.getStatusCode()) {
@@ -415,7 +415,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					}, TimeUnit.MINUTES.toMillis(eventCallbackWindow)); // TODO: ANANDH how to find the optimal ping
 																		// time?
 				} else {
-					logInfo("Event API response success ");
+					logDebug("Event API response success ");
 					Gson gson = new Gson();
 					Type type = new TypeToken<EventModel>() {
 					}.getType();
@@ -465,17 +465,17 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				// eventList.get(0).getId();
 				String url = ApiManager.getInstance().getEventAdsApi(eventModel.getId());
 				webResource = client.resource(url);
-				logInfo("calling api getAds");
+				logDebug("calling api getAds");
 				ClientResponse response = webResource.accept(MediaType.APPLICATION_JSON)
 						.type(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, headerStr)
 						.get(ClientResponse.class);
-				logInfo("completed api getAds");
+				logDebug("completed api getAds");
 				int responseStatus = response.getStatus();
 				String responseStr = response.getEntity(String.class);
 				if (responseStatus != ClientResponse.Status.OK.getStatusCode()) {
 					logError("ADS API response ERROR ");
 				} else {
-					logInfo("ADS API response success ");
+					logDebug("ADS API response success ");
 					Gson gson = new Gson();
 					Type type = new TypeToken<AdsModel[]>() {
 					}.getRawType();
@@ -524,9 +524,9 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 							timerFrequencyInMinutes = 1;
 						}
 					}
-					logInfo("timer frequency: " + timerFrequencyInMinutes);
+					logDebug("timer frequency: " + timerFrequencyInMinutes);
 					if (timerFrequencyInMinutes > 0) {
-						logInfo("Scheduling with frequency: " + timerFrequencyInMinutes);
+						logDebug("Scheduling with frequency: " + timerFrequencyInMinutes);
 						adsScheduler.schedule(new TimerTask() {
 							@Override
 							public void run() {
@@ -548,7 +548,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		}
 
 		private long calculateFrequency(AdsModel adModel) {
-			logInfo("calculating frequency for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
+			logDebug("calculating frequency for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 			TimeZone indianTimeZone = TimeZone.getTimeZone("Asia/Kolkata");
 			if (indianTimeZone == null)
 				indianTimeZone = TimeZone.getTimeZone("Asia/Calcutta");
@@ -558,7 +558,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(split[0].trim()));
 			calendar.set(Calendar.MINUTE, Integer.parseInt(split[1].trim()));
 			Date endTime = calendar.getTime();
-			logInfo("EndTime: " + endTime + " : CurrentTime: " + currentTime);
+			logDebug("EndTime: " + endTime + " : CurrentTime: " + currentTime);
 			long difference = endTime.getTime() - currentTime.getTime();
 			return difference > 0 ? TimeUnit.MILLISECONDS.toMinutes(difference) : 0;
 
@@ -776,8 +776,6 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		public void setVideoPadding(VideoPadding videoPadding) {
 			this.videoPadding = videoPadding;
 		}
-
-		
 
 		public int getSrcHeight() {
 			return srcHeight;
