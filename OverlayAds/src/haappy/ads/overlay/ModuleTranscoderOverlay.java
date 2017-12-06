@@ -73,7 +73,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	private WMSLogger logger;
 	Map<String, String> envMap;
 	private String headerStr = "NDcueyJyb2xlIjoiY3VzdG9tZXIiLCJ2YWx1ZSI6IjJlNjJhMjI0YjQxNDRkZDFiZjdmZWU3YTJlM2M1NjliMzI1MzQyYTIwODE4NjU4ZTdlMjMyNmRlMWM4YzZlZWEiLCJrZXkiOjEwMDAwMH0=";
-
+	private long pollingFrequency = 1000;
 	private IApplicationInstance appInstance = null;
 	/**
 	 * full path to the content directory where the graphics are kept
@@ -123,6 +123,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		this.basePath = this.basePath.replace("\\", "/");
 		if (!this.basePath.endsWith("/"))
 			this.basePath = this.basePath + "/";
+		pollingFrequency = appInstance.getProperties().getPropertyLong("PollingFrequency", 1000);
 		if (trancoderNotifier == null) {
 			trancoderNotifier = new TranscoderCreateNotifierExample();
 			this.appInstance.addLiveStreamTranscoderListener(trancoderNotifier);
@@ -257,7 +258,6 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 	class TranscoderVideoDecoderNotifyExample extends TranscoderVideoDecoderNotifyBase {
 
-		private static final int POLLING_FREQUENCY = 1000;
 		private OverlayImage wowzaText = null;
 		private OverlayImage wowzaTextShadow = null;
 		List<EncoderInfo> encoderInfoList = new ArrayList<EncoderInfo>();
@@ -530,7 +530,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					logDebug("timer frequency: " + timerFrequencyInMinutes);
 					if (timerFrequencyInMinutes > 0) {
 						long frequencyInMs = !startPolling ? TimeUnit.MINUTES.toMillis(timerFrequencyInMinutes)
-								: POLLING_FREQUENCY;
+								: pollingFrequency;
 						logDebug("Scheduling with frequency: " + frequencyInMs + " milliseconds");
 
 						adsScheduler.schedule(new TimerTask() {
