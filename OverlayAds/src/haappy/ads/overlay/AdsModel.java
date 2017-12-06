@@ -120,4 +120,16 @@ public class AdsModel {
 		this.logoFtpPath = logoFtpPath;
 	}
 
+	public StreamTarget getStreamTarget() {
+		return StreamTarget.valueOf(getAdTarget());
+	}
+
+	public String getHashMapKey() {
+		return StreamManager.getInstance().createHashMapKey(getStreamTarget(), getEventAdType());
+	}
+
+	public int getOverlayIndex() {
+		return AdType.getOverlayIndex(getEventAdType());
+	}
+
 }

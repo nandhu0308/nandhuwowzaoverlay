@@ -68,6 +68,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	LiveStreamTranscoder liveStreamTranscoder;
 	TranscoderVideoDecoderNotifyExample transcoderVideo;
 	ConcurrentHashMap<String, StreamOverlayImageDetail> targetImageMap = new ConcurrentHashMap<>();
+	ConcurrentHashMap<String, String> liveTargetImageMap = new ConcurrentHashMap<>();
 	private int eventPosition = 0;
 	private WMSLogger logger;
 	Map<String, String> envMap;
@@ -195,7 +196,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					+ appInstance.getContextStr() + "]");
 			TranscoderStream transcoderStream = liveStreamTranscoder.getTranscodingStream();
 			boolean chekc = transcoderStream != null && transcoder == null;
-			logInfo("checking if condition-" + chekc);
+
 			if (chekc) {
 				TranscoderSession transcoderSession = liveStreamTranscoder.getTranscodingSession();
 				TranscoderSessionVideo transcoderVideoSession = transcoderSession.getSessionVideo();
@@ -481,7 +482,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					Type type = new TypeToken<AdsModel[]>() {
 					}.getRawType();
 
-					AdsModel[] ads = gson.fromJson(responseStr, type);
+					final AdsModel[] ads = gson.fromJson(responseStr, type);
 					long timerFrequencyInMinutes = 0;
 					if (ads != null && ads.length > 0) {
 						for (AdsModel adModel : ads) {
@@ -503,7 +504,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					}
 					boolean startPolling = false;
 					if (timerFrequencyInMinutes == 0) {
-						targetImageMap.clear();
+
 						TimeZone indianTimeZone = TimeZone.getTimeZone("Asia/Kolkata");
 						if (indianTimeZone == null)
 							indianTimeZone = TimeZone.getTimeZone("Asia/Calcutta");
@@ -528,18 +529,26 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					}
 					logDebug("timer frequency: " + timerFrequencyInMinutes);
 					if (timerFrequencyInMinutes > 0) {
-						logDebug("Scheduling with frequency: " + timerFrequencyInMinutes);
+						long frequencyInMs = !startPolling ? TimeUnit.MINUTES.toMillis(timerFrequencyInMinutes)
+								: POLLING_FREQUENCY;
+						logDebug("Scheduling with frequency: " + frequencyInMs + " milliseconds");
+
 						adsScheduler.schedule(new TimerTask() {
 							@Override
 							public void run() {
-
-								getEventsAds(eventModel);
+								try {
+									clearOverlay(ads);
+									getEventsAds(eventModel);
+								} catch (Exception ex) {
+									logError(ex.toString());
+								}
 							}
-						}, !startPolling ? TimeUnit.MINUTES.toMillis(timerFrequencyInMinutes) : POLLING_FREQUENCY);
+
+						}, frequencyInMs);
 
 					} else {
 
-						targetImageMap.clear();
+						clearOverlay(ads);
 					}
 
 				}
@@ -547,6 +556,24 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				logError("Get Ads api error " + e.getMessage());
 			}
 
+		}
+
+		private void clearOverlay(final AdsModel[] ads) {
+			if (ads != null && ads.length > 0) {
+				for (AdsModel adModel : ads) {
+					String key = adModel.getHashMapKey();
+					if (liveTargetImageMap.containsKey(key)) {
+						// Clear the previous overlay and then add the new overlay
+						int overlayLogoIndex = adModel.getOverlayIndex();
+						for (EncoderInfo encoderInfo : encoderInfoList) {
+							logInfo("Encoder: " + encoderInfo.encodeName + ": clearing overlay " + key
+									+ " overlayindex: " + overlayLogoIndex);
+							encoderInfo.destinationVideo.clearOverlay(overlayLogoIndex);
+						}
+						liveTargetImageMap.remove(key);
+					}
+				}
+			}
 		}
 
 		private long calculateFrequency(AdsModel adModel) {
@@ -748,6 +775,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				}
 
 				targetImageMap.remove(key);
+				liveTargetImageMap.put(key, key);
 				// Add padding to the destination video i.e.
 				// pinch
 				VideoPadding padding = imageDetails.getVideoPadding();
