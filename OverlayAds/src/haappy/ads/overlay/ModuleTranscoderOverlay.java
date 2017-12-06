@@ -123,7 +123,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		this.basePath = this.basePath.replace("\\", "/");
 		if (!this.basePath.endsWith("/"))
 			this.basePath = this.basePath + "/";
-		pollingFrequency = appInstance.getProperties().getPropertyLong("PollingFrequency", 1000);
+		pollingFrequency = appInstance.getProperties().getPropertyLong("pollingFrequency", 1000);
 		if (trancoderNotifier == null) {
 			trancoderNotifier = new TranscoderCreateNotifierExample();
 			this.appInstance.addLiveStreamTranscoderListener(trancoderNotifier);
