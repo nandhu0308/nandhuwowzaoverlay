@@ -608,26 +608,24 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 			String lowerText = adModel.getLowerText();
 			boolean isTextAvailable = lowerText != null && !lowerText.isEmpty();
-			OverlayImage mainImage, wowzaText = null, wowzaTextShadow = null;
-			int overlayScreenTotalHeight = 0;
+			OverlayImage mainImage, wowzaText = null;
 			// add text bellow overlay Image
 			if (isTextAvailable) {
 				// Add Text with a drop shadow
-				wowzaText = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.white, srcWidth, 15, 100);
-				wowzaTextShadow = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.DARK_GRAY, srcWidth, 15,
+				wowzaText = new OverlayImage(lowerText, 20, "SansSerif", Font.BOLD, Color.red, srcWidth, srcHeight,
 						100);
-				overlayScreenTotalHeight = wowzaImage.GetHeight(1.0) + wowzaText.GetHeight(1.0);
+				// wowzaTextShadow = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD,
+				// Color.DARK_GRAY, srcWidth, 15,
+				// 100);
+
 				logInfo("Overlay text - " + lowerText);
 
-			} else {
-				overlayScreenTotalHeight = wowzaImage.GetHeight(1.0);
 			}
-			mainImage = new OverlayImage(posX, posY, srcWidth, overlayScreenTotalHeight, 100);
+			mainImage = new OverlayImage(posX, posY, srcWidth, wowzaImage.GetHeight(1.0), 100);
 			mainImage.addOverlayImage(wowzaImage, 0, 0);
-			logInfo(" Width * Height: " + srcWidth + " * " + srcHeight);
+
 			if (isTextAvailable) {
-				mainImage.addOverlayImage(wowzaText, wowzaImage.GetxPos(1.0), wowzaImage.GetHeight(1.0));
-				wowzaText.addOverlayImage(wowzaTextShadow, 1, 1);
+				mainImage.addOverlayImage(wowzaText, srcWidth/2, srcHeight / 2);
 			}
 
 			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
@@ -684,21 +682,26 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 			OverlayImage mainImage, wowzaText = null, wowzaTextShadow = null;
 
-			// add text bellow overlay Image
-			if (isTextAvailable) {
-				// Add Text with a drop shadow
-				wowzaText = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.white, srcWidth, 15, 100);
-				wowzaTextShadow = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD, Color.darkGray, srcWidth, 15,
-						100);
-				totalHeight = wowzaImage.GetHeight(1.0) + wowzaText.GetHeight(1.0);
-				// create a transparent container for the bottom third of the screen.
-				mainImage = new OverlayImage(posX, posY, wowzaImage.GetWidth(1.0), totalHeight, 100);
-				logInfo("Overlay text - " + lowerText);
-
-			} else {
-				mainImage = new OverlayImage(posX, posY, wowzaImage.GetWidth(1.0), wowzaImage.GetHeight(1.0), 100);
-			}
-
+			// // add text bellow overlay Image
+			// if (isTextAvailable) {
+			// // Add Text with a drop shadow
+			// wowzaText = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD,
+			// Color.white, srcWidth, 15, 100);
+			// wowzaTextShadow = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD,
+			// Color.darkGray, srcWidth, 15,
+			// 100);
+			// totalHeight = wowzaImage.GetHeight(1.0) + wowzaText.GetHeight(1.0);
+			// // create a transparent container for the bottom third of the screen.
+			// mainImage = new OverlayImage(posX, posY, wowzaImage.GetWidth(1.0),
+			// totalHeight, 100);
+			// logInfo("Overlay text - " + lowerText);
+			//
+			// } else
+			// {
+			// mainImage = new OverlayImage(posX, posY, wowzaImage.GetWidth(1.0),
+			// wowzaImage.GetHeight(1.0), 100);
+			// }
+			mainImage = new OverlayImage(posX, posY, wowzaImage.GetWidth(1.0), wowzaImage.GetHeight(1.0), 100);
 			mainImage.addOverlayImage(wowzaImage, 0, 0);
 			if (isTextAvailable) {
 				mainImage.addOverlayImage(wowzaText, wowzaImage.GetxPos(1.0), wowzaImage.GetHeight(1.0));
