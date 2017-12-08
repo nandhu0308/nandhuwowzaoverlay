@@ -174,6 +174,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		@Override
 		public void onLiveStreamTranscoderDestroy(ILiveStreamTranscoder liveStreamTranscoder, IMediaStream stream) {
 			logInfo("Destroy: " + stream.getName());
+			liveTargetImageMap.clear();
 
 		}
 
@@ -199,8 +200,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				List<TranscoderStreamDestination> alltrans = transcoderStream.getDestinations();
 				int w = transcoderVideoSession.getDecoderWidth();
 				int h = transcoderVideoSession.getDecoderHeight();
-				logInfo("Changed graphic path- " + graphicName);
-				logInfo("Creating new Overlay:" + "width-" + w + ", height-" + h);
+				logDebug("Changed graphic path- " + graphicName);
+				logInfo("TranscoderVideoSession :" + "width-" + w + ", height-" + h);
 				transcoder = new TranscoderVideoDecoderNotifyExample(w, h);
 				transcoderVideoSession.addFrameListener(transcoder);
 				// transcoderVideoSession.removeFrameListener(transcoder);
@@ -210,8 +211,15 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 					// TranscoderSessionVideoEncode sessionVideoEncode =
 					// transcoderVideoSession.getEncode(destination.getName());
 					TranscoderStreamDestinationVideo videoDestination = destination.getVideo();
-					System.out.println("sessionVideoEncode:" + sessionVideoEncode);
-					System.out.println("videoDestination:" + videoDestination);
+					logDebug("sessionVideoEncode:" + sessionVideoEncode.getName());
+					logDebug("videoDestination:" + destination.getName());
+					logDebug("DisplayWidth: " + videoDestination.getDisplayWidth() + " DisplayHeight: "
+							+ videoDestination.getDisplayHeight());
+					;
+					logDebug("FrameSizeWidth: " + videoDestination.getFrameSizeWidth() + " FrameSizeHeight: "
+							+ videoDestination.getFrameSizeHeight());
+					logDebug("FrameWidth: " + videoDestination.getFrameWidth() + "  FrameHeight: "
+							+ videoDestination.getFrameHeight());
 					if (sessionVideoEncode != null && videoDestination != null) {
 						transcoder.addEncoder(destination.getName(), sessionVideoEncode, videoDestination);
 					}
@@ -547,20 +555,24 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				List<String> keys = new ArrayList<>();
 				for (AdsModel adModel : ads) {
 					String key = adModel.getHashMapKey();
-					if ((liveTargetImageMap.containsKey(key))) {
-						// Clear the previous overlay and then add the new overlay
-						int overlayLogoIndex = adModel.getOverlayIndex();
-						boolean clearPadding = adModel.getEventAdType() == AdType.L_BAND;
-						for (EncoderInfo encoderInfo : encoderInfoList) {
-							logInfo("Encoder: " + encoderInfo.encodeName + ": clearing overlay " + key
-									+ " overlayindex: " + overlayLogoIndex);
-							encoderInfo.destinationVideo.clearOverlay(overlayLogoIndex);
-							if (clearPadding)
-								encoderInfo.destinationVideo.checkAndClearDidPaddingChange();
+					// Clear the previous overlay and then add the new overlay
+					int overlayLogoIndex = adModel.getOverlayIndex();
+					boolean clearPadding = adModel.getEventAdType() == AdType.L_BAND;
+					for (EncoderInfo encoderInfo : encoderInfoList) {
+						logInfo("Encoder: " + encoderInfo.encodeName + ": clearing overlay " + key + " overlayindex: "
+								+ overlayLogoIndex);
+						encoderInfo.destinationVideo.clearOverlay(overlayLogoIndex);
+						if (clearPadding) {
+							VideoPadding padding = VideoPadding.getVideoPadding(AdType.NONE);
+							encoderInfo.videoPadding[0] = padding.getLeft(1);
+							encoderInfo.videoPadding[1] = padding.getTop(1);
+							encoderInfo.videoPadding[2] = padding.getRight(1);
+							encoderInfo.videoPadding[3] = padding.getBottom(1);
+							encoderInfo.destinationVideo.setPadding(encoderInfo.videoPadding);
 						}
-						keys.add(key);
-
 					}
+					keys.add(key);
+
 				}
 
 				keys.forEach((key) -> {
@@ -619,7 +631,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			mainImage.addOverlayImage(wowzaImage, 0, 0);
 
 			if (isTextAvailable) {
-				//TODO: ANANDH Set the proper X and Y Pos
+				// TODO: ANANDH Set the proper X and Y Pos
 				mainImage.addOverlayImage(wowzaText, srcWidth / 2, srcHeight / 2);
 			}
 
@@ -716,30 +728,29 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				encoderInfo.destinationVideo.clearOverlay(overlayLogoIndex);
 				OverlayImage mainImage = imageDetails.getMainImage();
 				logInfo("overlaying for : " + key + " with the image: " + imageDetails.getImagePath());
-				int destinationHeight = encoderInfo.destinationVideo.getFrameSizeHeight();
-				scalingFactor = (double) destinationHeight / (double) sourceHeight;
-				logInfo("destinationHeight: " + destinationHeight + " sourceHeight:  " + sourceHeight
-						+ " Scaling Factor: " + scalingFactor);
 
-				TranscoderVideoOverlayFrame overlay = new TranscoderVideoOverlayFrame(mainImage.GetWidth(scalingFactor),
-						mainImage.GetHeight(scalingFactor), mainImage.GetBuffer(scalingFactor));
+				TranscoderVideoOverlayFrame overlay = new TranscoderVideoOverlayFrame(mainImage.GetWidth(1),
+						mainImage.GetHeight(1), mainImage.GetBuffer(1));
 				if (adType == AdType.BOTTOM_BAR) {
-					overlay.setDstY(destinationHeight);
+					overlay.setDstY(srcHeight);
 				} else if (adType == AdType.L_BAND) {
 					overlay.setDstX(0);
 					overlay.setDstY(0);
 				}
 
 				else {
-					overlay.setDstX(mainImage.GetxPos(scalingFactor));
-					overlay.setDstY(mainImage.GetyPos(scalingFactor));
+					overlay.setDstX(mainImage.GetxPos(1));
+					overlay.setDstY(mainImage.GetyPos(1));
 				}
 
 				targetImageMap.remove(key);
 				liveTargetImageMap.put(key, key);
 				// Add padding to the destination video i.e.
 				// pinch
-				VideoPadding padding = imageDetails.getVideoPadding();
+
+				VideoPadding padding = VideoPadding.getVideoPadding(imageDetails.getAdType());
+				logDebug("Left Top Right Bottom " + padding.getLeft(1) + " : " + padding.getTop(1) + " : "
+						+ padding.getRight(1) + " : " + padding.getBottom(1));
 				encoderInfo.videoPadding[0] = padding.getLeft(1);
 				encoderInfo.videoPadding[1] = padding.getTop(1);
 				encoderInfo.videoPadding[2] = padding.getRight(1);
@@ -758,15 +769,6 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		private AdType adType;
 		private String key = "";
 		private int srcHeight, srcWidth;
-		private VideoPadding videoPadding;
-
-		public VideoPadding getVideoPadding() {
-			return videoPadding;
-		}
-
-		public void setVideoPadding(VideoPadding videoPadding) {
-			this.videoPadding = videoPadding;
-		}
 
 		public int getSrcHeight() {
 			return srcHeight;
@@ -831,7 +833,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			this.adType = adType;
 			this.srcWidth = srcWidth;
 			this.srcHeight = srcHeight;
-			this.videoPadding = VideoPadding.getVideoPadding(adType, srcWidth, srcHeight);
+
 		}
 
 		public StreamOverlayImageDetail(OverlayImage image, String target, String imagePath, AdType adType,

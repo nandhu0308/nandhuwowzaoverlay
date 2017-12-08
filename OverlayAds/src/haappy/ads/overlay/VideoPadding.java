@@ -35,12 +35,12 @@ public class VideoPadding {
 		this.bottom = bottom;
 	}
 
-	public static VideoPadding getVideoPadding(AdType adType, int width, int height) {
+	public static VideoPadding getVideoPadding(AdType adType) {
 		VideoPadding padding = new VideoPadding();
 		switch (adType) {
 		case L_BAND:
-			padding.setLeft((int)( (200.0 / 1280.0) * width));
-			padding.setBottom((int)( (150.0 / 720.0) * height));
+			padding.setLeft(200);
+			padding.setBottom(150);
 			break;
 		default:
 			break;
