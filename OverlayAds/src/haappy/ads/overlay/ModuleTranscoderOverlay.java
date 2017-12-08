@@ -3,49 +3,38 @@ package haappy.ads.overlay;
 import java.awt.Color;
 import java.awt.Font;
 import java.lang.reflect.Type;
-import java.text.SimpleDateFormat;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.spi.TimeZoneNameProvider;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 
-import org.apache.http.client.HttpClient;
-import org.joda.time.DateTime;
 import org.json.JSONObject;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.reflect.TypeToken;
 import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 import com.wowza.util.SystemUtils;
-import com.wowza.wms.application.*;
-import com.wowza.wms.amf.*;
-import com.wowza.wms.client.*;
+import com.wowza.wms.amf.AMFDataList;
+import com.wowza.wms.application.IApplicationInstance;
+import com.wowza.wms.client.IClient;
 import com.wowza.wms.logging.WMSLogger;
-import com.wowza.wms.module.*;
-import com.wowza.wms.request.*;
-import com.wowza.wms.stream.*;
+import com.wowza.wms.module.ModuleBase;
+import com.wowza.wms.request.RequestFunction;
+import com.wowza.wms.stream.IMediaStream;
 import com.wowza.wms.stream.livetranscoder.ILiveStreamTranscoder;
 import com.wowza.wms.stream.livetranscoder.ILiveStreamTranscoderNotify;
 import com.wowza.wms.transcoder.model.LiveStreamTranscoder;
@@ -69,7 +58,9 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	TranscoderVideoDecoderNotifyExample transcoderVideo;
 	ConcurrentHashMap<String, StreamOverlayImageDetail> targetImageMap = new ConcurrentHashMap<>();
 	ConcurrentHashMap<String, String> liveTargetImageMap = new ConcurrentHashMap<>();
-	private int eventPosition = 0;
+	// ConcurrentHashMap<String, AdsModel> expiringAdModel = new
+	// ConcurrentHashMap<>();
+
 	private WMSLogger logger;
 	Map<String, String> envMap;
 	private String headerStr = "NDcueyJyb2xlIjoiY3VzdG9tZXIiLCJ2YWx1ZSI6IjJlNjJhMjI0YjQxNDRkZDFiZjdmZWU3YTJlM2M1NjliMzI1MzQyYTIwODE4NjU4ZTdlMjMyNmRlMWM4YzZlZWEiLCJrZXkiOjEwMDAwMH0=";
@@ -172,6 +163,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	}
 
 	class TranscoderCreateNotifierExample implements ILiveStreamTranscoderNotify {
+		@Override
 		public void onLiveStreamTranscoderCreate(ILiveStreamTranscoder liveStreamTranscoder, IMediaStream stream) {
 			logInfo("ModuleTranscoderOverlayExample#TranscoderCreateNotifierExample.onLiveStreamTranscoderCreate["
 					+ appInstance.getContextStr() + "]: " + stream.getName());
@@ -179,11 +171,13 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			((LiveStreamTranscoder) liveStreamTranscoder).addActionListener(new TranscoderActionNotifierExample());
 		}
 
+		@Override
 		public void onLiveStreamTranscoderDestroy(ILiveStreamTranscoder liveStreamTranscoder, IMediaStream stream) {
 			logInfo("Destroy: " + stream.getName());
 
 		}
 
+		@Override
 		public void onLiveStreamTranscoderInit(ILiveStreamTranscoder liveStreamTranscoder, IMediaStream stream) {
 		}
 	}
@@ -191,6 +185,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	class TranscoderActionNotifierExample extends LiveStreamTranscoderActionNotifyBase {
 		TranscoderVideoDecoderNotifyExample transcoder = null;
 
+		@Override
 		public void onSessionVideoEncodeSetup(LiveStreamTranscoder liveStreamTranscoder,
 				TranscoderSessionVideoEncode sessionVideoEncode) {
 			logInfo("ModuleTranscoderOverlayExample#TranscoderActionNotifierExample.onSessionVideoEncodeSetup["
@@ -258,22 +253,12 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 	class TranscoderVideoDecoderNotifyExample extends TranscoderVideoDecoderNotifyBase {
 
-		private OverlayImage wowzaText = null;
-		private OverlayImage wowzaTextShadow = null;
 		List<EncoderInfo> encoderInfoList = new ArrayList<EncoderInfo>();
 		AnimationEvents videoBottomPadding = new AnimationEvents();
-		private boolean imageTime = false;
-		private OverlayImage secondImage = null;
-		private OverlayImage holderImage = null;
-		private String bottomImageName = "bottom_image.png";
-		private String leftIamgeName = "haappy_lBand_vertical.png";
-		// private String bottomImageName = "haappyapp-lband.png";
-		private String fullOverlayImage = "full_mage.png";
 		int srcWidth, srcHeight;
 		int childPosition;
 
 		int overlayWidth;
-		private String overlayText = "Haappy app overlay example transcoder with bottom text";
 		String firstPosition = "CENTER_CENTER";
 		String secondPosition = "RIGHT_TOP";
 		// String thirdPosition = "LEFT_BOTTOM";
@@ -432,7 +417,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 								eventState = EventState.ended;
 								getScheduledAds(id);
 							}
-						}, getEventEndTimeForTimerSchedule(event));
+						}, CalendarHelper.getEventEndTimeForTimerSchedule(event));
 
 					}
 				}
@@ -445,26 +430,11 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 		Timer adsScheduler = new Timer();
 
-		private long getEventEndTimeForTimerSchedule(EventModel eventModel) {
-			TimeZone indianTimeZone = TimeZone.getTimeZone("Asia/Kolkata");
-			if (indianTimeZone == null)
-				indianTimeZone = TimeZone.getTimeZone("Asia/Calcutta");
-			Calendar calendar = Calendar.getInstance(indianTimeZone);
-			Date currentTime = calendar.getTime();
-			String[] split = eventModel.getStartTime().split(":");
-			calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(split[0].trim()));
-			calendar.set(Calendar.MINUTE, Integer.parseInt(split[1].trim()));
-			calendar.add(Calendar.HOUR, eventModel.getDuration()); // get the end time
-			return calendar.getTime().getTime() - currentTime.getTime();
-		}
-
 		protected void getEventsAds(EventModel eventModel) {
 			Client client;
 			WebResource webResource;
 			try {
 				client = Client.create();
-				// String url = "http://localhost:8080/LLCWeb/engage/ads/get/logo/event/" +
-				// eventList.get(0).getId();
 				String url = ApiManager.getInstance().getEventAdsApi(eventModel.getId());
 				webResource = client.resource(url);
 				logDebug("calling api getAds");
@@ -484,46 +454,58 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 					final AdsModel[] ads = gson.fromJson(responseStr, type);
 					long timerFrequencyInMinutes = 0;
+					final HashMap<Integer, AdsModel> expiringAdModel = new HashMap<>();
+
 					if (ads != null && ads.length > 0) {
+						logDebug("TotalAds: " + ads.length);
+						int counter = 0;
 						for (AdsModel adModel : ads) {
-							logInfo("received ads - " + adModel.getAdPlacement());
-							switch (adModel.getEventAdType()) {
-							case LOGO:
-								setupadsImages(adModel);
-								break;
-							case BOTTOM_BAR:
-								setupBottomImage(adModel);
-								break;
-							case L_BAND:
-								setupFullscreenOverlay(adModel);
+							if (!liveTargetImageMap.containsKey(adModel.getHashMapKey())) {
+								logInfo("received ads - " + adModel.getAdPlacement());
+								switch (adModel.getEventAdType()) {
+								case LOGO:
+									setupadsImages(adModel);
+									break;
+								case BOTTOM_BAR:
+									setupBottomImage(adModel);
+									break;
+								case L_BAND:
+									setupFullscreenOverlay(adModel);
+								default:
+									break;
+								}
+							} else {
+								logDebug("Skipping ad: " + adModel.getHashMapKey());
+							}
+							// Find the least possible timer frequency
+							long tempTimerFrequencyInMinutes = calculateFrequency(adModel);
+							if (counter == 0) {
+								// assume the first frequency as the smallest
+								timerFrequencyInMinutes = tempTimerFrequencyInMinutes;
+							}
+							if (tempTimerFrequencyInMinutes <= timerFrequencyInMinutes) {
+								// clear previous values only if current time is less than previous. Ignore if
+								// it is equal
+								if (tempTimerFrequencyInMinutes < timerFrequencyInMinutes) {
+									logDebug("clearing expiring model: " + adModel.getHashMapKey());
+									expiringAdModel.clear();
+								}
+								logDebug("Adding to expiring model: " + adModel.getHashMapKey());
+								expiringAdModel.put(adModel.getId(), adModel);
+								timerFrequencyInMinutes = tempTimerFrequencyInMinutes;
 							}
 
+							counter++;
 						}
 
-						timerFrequencyInMinutes = calculateFrequency(ads[0]);
 					}
 					boolean startPolling = false;
 					if (timerFrequencyInMinutes == 0) {
-
-						TimeZone indianTimeZone = TimeZone.getTimeZone("Asia/Kolkata");
-						if (indianTimeZone == null)
-							indianTimeZone = TimeZone.getTimeZone("Asia/Calcutta");
-						Calendar calendar = Calendar.getInstance(indianTimeZone);
+						Calendar calendar = CalendarHelper.getCalendarForIndianTimeZone();
 						Date currentTime = calendar.getTime();
-						String[] split = eventModel.getStartTime().split(":");
-						calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(split[0].trim()));
-						calendar.set(Calendar.MINUTE, Integer.parseInt(split[1].trim()));
-						calendar.add(Calendar.HOUR, eventModel.getDuration()); // get the end time
-						Date eventEndTime = calendar.getTime();
-
+						Date eventEndTime = CalendarHelper.getEventEndTime(eventModel, calendar);
 						if (currentTime.getTime() < eventEndTime.getTime()) {
-							// Calendar calendarNew = Calendar.getInstance(indianTimeZone);
-							// Date newCurrentTime = calendarNew.getTime();
-							// calendarNew.add(Calendar.MINUTE, eventModel.getAdWindowTime());
-							// Date adWindowEndTime = calendarNew.getTime();
-							// long timerFrequencyInMilli = adWindowEndTime.getTime() -
-							// newCurrentTime.getTime();
-							timerFrequencyInMinutes = 1;
+							timerFrequencyInMinutes = pollingFrequency;
 							startPolling = true;
 						}
 					}
@@ -537,7 +519,9 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 							@Override
 							public void run() {
 								try {
-									clearOverlay(ads);
+									// Clear the overlay for only expired ad model
+									logDebug("Total expiring Ads: " + expiringAdModel.values().size());
+									clearOverlay(expiringAdModel.values());
 									getEventsAds(eventModel);
 								} catch (Exception ex) {
 									logError(ex.toString());
@@ -547,8 +531,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 						}, frequencyInMs);
 
 					} else {
-
-						clearOverlay(ads);
+						// Clear and Reset all the overlays
+						clearOverlay(Arrays.asList(ads));
 					}
 
 				}
@@ -558,21 +542,31 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 
 		}
 
-		private void clearOverlay(final AdsModel[] ads) {
-			if (ads != null && ads.length > 0) {
+		private void clearOverlay(final Collection<AdsModel> ads) {
+			if (ads != null && ads.size() > 0) {
+				List<String> keys = new ArrayList<>();
 				for (AdsModel adModel : ads) {
 					String key = adModel.getHashMapKey();
-					if (liveTargetImageMap.containsKey(key)) {
+					if ((liveTargetImageMap.containsKey(key))) {
 						// Clear the previous overlay and then add the new overlay
 						int overlayLogoIndex = adModel.getOverlayIndex();
+						boolean clearPadding = adModel.getEventAdType() == AdType.L_BAND;
 						for (EncoderInfo encoderInfo : encoderInfoList) {
 							logInfo("Encoder: " + encoderInfo.encodeName + ": clearing overlay " + key
 									+ " overlayindex: " + overlayLogoIndex);
 							encoderInfo.destinationVideo.clearOverlay(overlayLogoIndex);
+							if (clearPadding)
+								encoderInfo.destinationVideo.checkAndClearDidPaddingChange();
 						}
-						liveTargetImageMap.remove(key);
+						keys.add(key);
+
 					}
 				}
+
+				keys.forEach((key) -> {
+					if (liveTargetImageMap.containsKey(key))
+						liveTargetImageMap.remove(key);
+				});
 			}
 		}
 
@@ -625,7 +619,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			mainImage.addOverlayImage(wowzaImage, 0, 0);
 
 			if (isTextAvailable) {
-				mainImage.addOverlayImage(wowzaText, srcWidth/2, srcHeight / 2);
+				//TODO: ANANDH Set the proper X and Y Pos
+				mainImage.addOverlayImage(wowzaText, srcWidth / 2, srcHeight / 2);
 			}
 
 			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
@@ -657,13 +652,6 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			int posY = Math.round(getOverlayPositionY(srcHeight, placement));
 			logInfo("placement-" + placement);
 			OverlayImage wowzaImage;
-
-			// if (Environment.isDebugMode()) {
-			// StreamTarget tar = StreamTarget.valueOf(adModel.getAdTarget());
-			// imagePath = basePath + (tar == StreamTarget.facebook ? graphicName :
-			// secondGraphName);
-			// logInfo("Image Path: " + basePath + secondGraphName);
-			// }
 			logInfo("Image Path: " + imagePath);
 			wowzaImage = new OverlayImage(imagePath, 100, logger, envMap);
 			// Calculate center Points
@@ -674,44 +662,16 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			if (y_placement.equalsIgnoreCase("MIDDLE"))
 				posY = posY - (wowzaImage.GetHeight(0.5));
 
-			String lowerText = adModel.getLowerText();
-			boolean isTextAvailable = lowerText != null && !lowerText.isEmpty();
-			int totalHeight = 0;
-
 			logInfo("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 
-			OverlayImage mainImage, wowzaText = null, wowzaTextShadow = null;
+			OverlayImage mainImage;
 
-			// // add text bellow overlay Image
-			// if (isTextAvailable) {
-			// // Add Text with a drop shadow
-			// wowzaText = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD,
-			// Color.white, srcWidth, 15, 100);
-			// wowzaTextShadow = new OverlayImage(lowerText, 12, "SansSerif", Font.BOLD,
-			// Color.darkGray, srcWidth, 15,
-			// 100);
-			// totalHeight = wowzaImage.GetHeight(1.0) + wowzaText.GetHeight(1.0);
-			// // create a transparent container for the bottom third of the screen.
-			// mainImage = new OverlayImage(posX, posY, wowzaImage.GetWidth(1.0),
-			// totalHeight, 100);
-			// logInfo("Overlay text - " + lowerText);
-			//
-			// } else
-			// {
-			// mainImage = new OverlayImage(posX, posY, wowzaImage.GetWidth(1.0),
-			// wowzaImage.GetHeight(1.0), 100);
-			// }
 			mainImage = new OverlayImage(posX, posY, wowzaImage.GetWidth(1.0), wowzaImage.GetHeight(1.0), 100);
 			mainImage.addOverlayImage(wowzaImage, 0, 0);
-			if (isTextAvailable) {
-				mainImage.addOverlayImage(wowzaText, wowzaImage.GetxPos(1.0), wowzaImage.GetHeight(1.0));
-				wowzaText.addOverlayImage(wowzaTextShadow, 1, 1);
-			}
 			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
 					imagePath, adModel.getEventAdType(), srcWidth, srcHeight);
 			logInfo("updated images for target: " + mainImageDetails.getTarget());
 			targetImageMap.put(mainImageDetails.getHashMapKey(), mainImageDetails);
-			imageTime = true;
 		}
 
 		public void addEncoder(String name, TranscoderSessionVideoEncode sessionVideoEncode,
@@ -719,15 +679,13 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			encoderInfoList.add(new EncoderInfo(name, sessionVideoEncode, destinationVideo));
 		}
 
+		@Override
 		public void onBeforeScaleFrame(TranscoderSessionVideo sessionVideo, TranscoderStreamSourceVideo sourceVideo,
 				long frameCount) {
-			boolean encodeSource = false;
-			boolean showTime = false;
-			double scalingFactor = 1.0;
 			synchronized (lock) {
 
 				int sourceHeight = sessionVideo.getDecoderHeight();
-				int sourceWidth = sessionVideo.getDecoderWidth();
+				sessionVideo.getDecoderWidth();
 				for (EncoderInfo encoderInfo : encoderInfoList) {
 					if (!encoderInfo.destinationVideo.isPassThrough()) {
 						if (eventState == EventState.started) {
