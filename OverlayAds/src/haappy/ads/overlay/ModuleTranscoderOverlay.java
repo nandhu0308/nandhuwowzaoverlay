@@ -508,15 +508,13 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 							if (!liveTargetImageMap.containsKey(adModel.getHashMapKey())) {
 								logInfo("received ads - " + adModel.getAdPlacement());
 								switch (adModel.getEventAdType()) {
-								case LOGO:
-									setupadsImages(adModel);
-									break;
 								case BOTTOM_BAR:
 									setupBottomImage(adModel);
 									break;
 								case L_BAND:
 									setupFullscreenOverlay(adModel);
 								default:
+									setupadsImages(adModel);
 									break;
 								}
 							} else {

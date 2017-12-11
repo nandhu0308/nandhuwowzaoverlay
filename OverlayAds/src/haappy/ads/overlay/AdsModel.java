@@ -11,7 +11,19 @@ public class AdsModel {
 
 	// LOGO , L-BAND,BOTTOM-BAR,VIDEO,SLIDE
 	public String getAdType() {
-		return adType != null ? adType.toUpperCase().trim() : "LOGO";
+		String result = "LOGO_TOP_RIGHT";
+		if (adType != null && !adType.isEmpty()) {
+			if (adType.equalsIgnoreCase("LOGO")) {
+				if (adPlacement != null && !adPlacement.isEmpty() && !adPlacement.equalsIgnoreCase("NONE")) {
+					result = (adType.trim() + "_" + adPlacement.trim()).toUpperCase();
+				}
+
+			} else {
+				result = adType.toUpperCase();
+			}
+		}
+
+		return result;
 	}
 
 	public void setAdType(String adType) {
