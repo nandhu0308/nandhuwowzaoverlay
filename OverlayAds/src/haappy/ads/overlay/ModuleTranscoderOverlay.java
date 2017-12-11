@@ -49,13 +49,15 @@ import com.wowza.wms.transcoder.model.TranscoderStreamSourceVideo;
 import com.wowza.wms.transcoder.model.TranscoderVideoDecoderNotifyBase;
 import com.wowza.wms.transcoder.model.TranscoderVideoOverlayFrame;
 
+import haappy.ads.overlay.ModuleTranscoderOverlay.EncoderInfo;
+
 public class ModuleTranscoderOverlay extends ModuleBase {
 
 	String graphicName = "logo.png";
 	String secondGraphName = "wowzalogo.png";
 
 	LiveStreamTranscoder liveStreamTranscoder;
-	TranscoderVideoDecoderNotifyExample transcoderVideo;
+
 	ConcurrentHashMap<String, StreamOverlayImageDetail> targetImageMap = new ConcurrentHashMap<>();
 	ConcurrentHashMap<String, String> liveTargetImageMap = new ConcurrentHashMap<>();
 	// ConcurrentHashMap<String, AdsModel> expiringAdModel = new
@@ -65,13 +67,15 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	Map<String, String> envMap;
 	private String headerStr = "NDcueyJyb2xlIjoiY3VzdG9tZXIiLCJ2YWx1ZSI6IjJlNjJhMjI0YjQxNDRkZDFiZjdmZWU3YTJlM2M1NjliMzI1MzQyYTIwODE4NjU4ZTdlMjMyNmRlMWM4YzZlZWEiLCJrZXkiOjEwMDAwMH0=";
 	private long pollingFrequency = 1000;
+	private long eventPollingFrequency = 1000;
+	private boolean enableOverlayDebugLog = false;
 	private IApplicationInstance appInstance = null;
 	/**
 	 * full path to the content directory where the graphics are kept
 	 */
 	private String basePath = null;
 	private Object lock = new Object();
-	TranscoderCreateNotifierExample trancoderNotifier = null;
+	TranscoderCreateNotifier trancoderNotifier = null;
 	public final static String logPrefix = "######## ModuleTranscoderOverlay ########--> ";
 
 	public ModuleTranscoderOverlay() {
@@ -85,7 +89,10 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 	}
 
 	private void logDebug(String msg) {
-		logger.debug(logPrefix + msg);
+		if (!enableOverlayDebugLog)
+			logger.debug(logPrefix + msg);
+		else
+			logInfo(msg);
 	}
 
 	private void logError(String error) {
@@ -115,8 +122,10 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		if (!this.basePath.endsWith("/"))
 			this.basePath = this.basePath + "/";
 		pollingFrequency = appInstance.getProperties().getPropertyLong("pollingFrequency", 1000);
+		eventPollingFrequency = appInstance.getProperties().getPropertyLong("eventPollingFrequency", 1000);
+		enableOverlayDebugLog = appInstance.getProperties().getPropertyBoolean("enableOverlayDebugLog", false);
 		if (trancoderNotifier == null) {
-			trancoderNotifier = new TranscoderCreateNotifierExample();
+			trancoderNotifier = new TranscoderCreateNotifier();
 			this.appInstance.addLiveStreamTranscoderListener(trancoderNotifier);
 		}
 
@@ -162,20 +171,47 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		logInfo("onDisconnect: " + client.getClientId());
 	}
 
-	class TranscoderCreateNotifierExample implements ILiveStreamTranscoderNotify {
+	class TranscoderCreateNotifier implements ILiveStreamTranscoderNotify {
+		TranscoderActionNotifier transcoderActionNotifier;
+
 		@Override
 		public void onLiveStreamTranscoderCreate(ILiveStreamTranscoder liveStreamTranscoder, IMediaStream stream) {
-			logInfo("ModuleTranscoderOverlayExample#TranscoderCreateNotifierExample.onLiveStreamTranscoderCreate["
+			logInfo("ModuleTranscoderOverlay#TranscoderCreateNotifier.onLiveStreamTranscoderCreate["
 					+ appInstance.getContextStr() + "]: " + stream.getName());
-
-			((LiveStreamTranscoder) liveStreamTranscoder).addActionListener(new TranscoderActionNotifierExample());
+			transcoderActionNotifier = new TranscoderActionNotifier();
+			((LiveStreamTranscoder) liveStreamTranscoder).addActionListener(transcoderActionNotifier);
 		}
 
 		@Override
 		public void onLiveStreamTranscoderDestroy(ILiveStreamTranscoder liveStreamTranscoder, IMediaStream stream) {
 			logInfo("Destroy: " + stream.getName());
-			liveTargetImageMap.clear();
+			destroy();
+		}
 
+		private void destroy() {
+			liveTargetImageMap.clear();
+			List<EncoderInfo> encoderInfoList = null;
+			if (transcoderActionNotifier != null && transcoderActionNotifier.transcoder != null) {
+				encoderInfoList = transcoderActionNotifier.transcoder.encoderInfoList;
+			} else {
+				encoderInfoList = new ArrayList<EncoderInfo>();
+			}
+
+			for (AdType adType : AdType.getavailableTypes()) {
+				int overlayLogoIndex = AdType.getOverlayIndex(adType);
+
+				for (EncoderInfo encoderInfo : encoderInfoList) {
+					logInfo("Encoder: " + encoderInfo.encodeName + " overlayindex: " + overlayLogoIndex);
+					encoderInfo.destinationVideo.clearOverlay(overlayLogoIndex);
+					VideoPadding padding = VideoPadding.getVideoPadding(AdType.NONE);
+					encoderInfo.videoPadding[0] = padding.getLeft(1);
+					encoderInfo.videoPadding[1] = padding.getTop(1);
+					encoderInfo.videoPadding[2] = padding.getRight(1);
+					encoderInfo.videoPadding[3] = padding.getBottom(1);
+					encoderInfo.destinationVideo.setPadding(encoderInfo.videoPadding);
+
+				}
+			}
 		}
 
 		@Override
@@ -183,13 +219,13 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		}
 	}
 
-	class TranscoderActionNotifierExample extends LiveStreamTranscoderActionNotifyBase {
-		TranscoderVideoDecoderNotifyExample transcoder = null;
+	class TranscoderActionNotifier extends LiveStreamTranscoderActionNotifyBase {
+		public TranscoderVideoDecoderNotify transcoder = null;
 
 		@Override
 		public void onSessionVideoEncodeSetup(LiveStreamTranscoder liveStreamTranscoder,
 				TranscoderSessionVideoEncode sessionVideoEncode) {
-			logInfo("ModuleTranscoderOverlayExample#TranscoderActionNotifierExample.onSessionVideoEncodeSetup["
+			logInfo("ModuleTranscoderOverlay#TranscoderActionNotifier.onSessionVideoEncodeSetup["
 					+ appInstance.getContextStr() + "]");
 			TranscoderStream transcoderStream = liveStreamTranscoder.getTranscodingStream();
 			boolean chekc = transcoderStream != null && transcoder == null;
@@ -202,7 +238,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				int h = transcoderVideoSession.getDecoderHeight();
 				logDebug("Changed graphic path- " + graphicName);
 				logInfo("TranscoderVideoSession :" + "width-" + w + ", height-" + h);
-				transcoder = new TranscoderVideoDecoderNotifyExample(w, h);
+				transcoder = new TranscoderVideoDecoderNotify(w, h);
 				transcoderVideoSession.addFrameListener(transcoder);
 				// transcoderVideoSession.removeFrameListener(transcoder);
 
@@ -259,9 +295,9 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		return positionY;
 	}
 
-	class TranscoderVideoDecoderNotifyExample extends TranscoderVideoDecoderNotifyBase {
+	class TranscoderVideoDecoderNotify extends TranscoderVideoDecoderNotifyBase {
 
-		List<EncoderInfo> encoderInfoList = new ArrayList<EncoderInfo>();
+		public List<EncoderInfo> encoderInfoList = new ArrayList<EncoderInfo>();
 		AnimationEvents videoBottomPadding = new AnimationEvents();
 		int srcWidth, srcHeight;
 		int childPosition;
@@ -272,8 +308,8 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		// String thirdPosition = "LEFT_BOTTOM";
 		// int calculatedWidth, calculatedHeight;
 
-		public TranscoderVideoDecoderNotifyExample(int srcWidth, int srcHeight) {
-			logInfo("Creating TranscoderVideoDecoderNotifyExample");
+		public TranscoderVideoDecoderNotify(int srcWidth, int srcHeight) {
+			logInfo("Creating TranscoderVideoDecoderNotify");
 			this.srcWidth = srcWidth;
 			this.srcHeight = srcHeight;
 			getAppId();
@@ -399,16 +435,17 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				int responseStatus = response.getStatus();
 				String responseStr = response.getEntity(String.class);
 				if (responseStatus != ClientResponse.Status.OK.getStatusCode()) {
-					int eventCallbackWindow = 10;// in minutes
-					logDebug("No Events available. scheduling for request in next " + eventCallbackWindow + " mins");
+
+					logDebug("No Events available. scheduling for request in next " + eventPollingFrequency
+							+ " milliseconds");
 					eventTimer.schedule(new TimerTask() {
 						@Override
 						public void run() {
 							getScheduledAds(id);
 
 						}
-					}, TimeUnit.MINUTES.toMillis(eventCallbackWindow)); // TODO: ANANDH how to find the optimal ping
-																		// time?
+					}, eventPollingFrequency); // TODO: ANANDH how to find the optimal ping
+												// time?
 				} else {
 					logDebug("Event API response success ");
 					Gson gson = new Gson();
@@ -725,7 +762,6 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 				// Clear the previous overlay and then add the new overlay
 				StreamOverlayImageDetail imageDetails = targetImageMap.get(key);
 				int overlayLogoIndex = AdType.getOverlayIndex(imageDetails.getAdType());
-				encoderInfo.destinationVideo.clearOverlay(overlayLogoIndex);
 				OverlayImage mainImage = imageDetails.getMainImage();
 				logInfo("overlaying for : " + key + " with the image: " + imageDetails.getImagePath());
 
