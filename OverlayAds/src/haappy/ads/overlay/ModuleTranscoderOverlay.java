@@ -637,7 +637,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		// call this method to show bottom overlay only
 		private void setupBottomImage(AdsModel adModel) {
 			String imagePath = adModel.getLogoFtpPath();
-			logInfo("Executing for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
+			logInfo("Setting Bottom-Bar for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 			OverlayImage wowzaImage;
 			int posX = Math.round(getOverlayPositionX(srcWidth, "BOTTOM_LEFT"));
 			int posY = Math.round(getOverlayPositionY(srcHeight, "BOTTOM_LEFT"));
@@ -645,7 +645,6 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			logInfo("Image Path: " + imagePath);
 			// Create the Wowza logo image
 			wowzaImage = new OverlayImage(imagePath, 100, logger, envMap);
-			logInfo("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 
 			String lowerText = adModel.getLowerText();
 			boolean isTextAvailable = lowerText != null && !lowerText.isEmpty();
@@ -682,7 +681,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			OverlayImage wowzaImage, mainImage;
 			logInfo("Image Path: " + imagePath);
 			wowzaImage = new OverlayImage(imagePath, 100, logger, envMap);
-			logInfo("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
+			logInfo("Setting L-Band for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 			mainImage = new OverlayImage(0, 0, srcWidth, srcHeight, 100);
 			mainImage.addOverlayImage(wowzaImage, 0, 0);
 			StreamOverlayImageDetail mainImageDetails = new StreamOverlayImageDetail(mainImage, adModel.getAdTarget(),
@@ -694,7 +693,7 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 		private void setupadsImages(AdsModel adModel) {
 			String imagePath = adModel.getLogoFtpPath();
 			String placement = adModel.getAdPlacement();
-			logInfo("Executing for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
+			logInfo("Setting Logo for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 			int posX = Math.round(getOverlayPositionX(srcWidth, placement));
 			int posY = Math.round(getOverlayPositionY(srcHeight, placement));
 			logInfo("placement-" + placement);
@@ -709,7 +708,6 @@ public class ModuleTranscoderOverlay extends ModuleBase {
 			if (y_placement.equalsIgnoreCase("MIDDLE"))
 				posY = posY - (wowzaImage.GetHeight(0.5));
 
-			logInfo("update OverlayImage for admodel: " + adModel.getId() + " " + adModel.getAdEventId());
 
 			OverlayImage mainImage;
 
